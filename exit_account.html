@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conta Excluída - Confirmação</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Partículas de fundo */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 15s infinite linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-1000px) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* Card principal */
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border-radius: 24px;
+            padding: 60px 40px;
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            z-index: 2;
+            animation: fadeIn 1s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Ícone de exclusão */
+        .icon-container {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 30px;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 20px rgba(239, 68, 68, 0);
+            }
+        }
+
+        .icon-container::before {
+            content: '';
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            border: 2px solid rgba(239, 68, 68, 0.3);
+            border-radius: 50%;
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .icon {
+            font-size: 60px;
+            color: #ef4444;
+            z-index: 1;
+        }
+
+        /* Texto principal */
+        .title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: #ef4444;
+            margin-bottom: 20px;
+            text-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+            line-height: 1.2;
+            letter-spacing: -0.5px;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+            }
+            to {
+                text-shadow: 0 4px 30px rgba(239, 68, 68, 0.7), 0 0 40px rgba(239, 68, 68, 0.2);
+            }
+        }
+
+        /* Mensagem secundária */
+        .subtitle {
+            font-size: 1.5rem;
+            color: #d1d5db;
+            margin-bottom: 40px;
+            line-height: 1.6;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Detalhes da exclusão */
+        .details {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 40px;
+            border-left: 4px solid #ef4444;
+            text-align: left;
+        }
+
+        .details-title {
+            color: #fca5a5;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .details-list {
+            list-style: none;
+            color: #9ca3af;
+        }
+
+        .details-list li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .details-list i {
+            color: #ef4444;
+            font-size: 14px;
+        }
+
+        /* Botões */
+        .buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            min-width: 200px;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #d1d5db;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Contador */
+        .counter {
+            margin-top: 40px;
+            color: #9ca3af;
+            font-size: 0.95rem;
+        }
+
+        .counter span {
+            color: #fca5a5;
+            font-weight: 600;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .container {
+                padding: 40px 25px;
+            }
+            
+            .title {
+                font-size: 2.5rem;
+            }
+            
+            .subtitle {
+                font-size: 1.2rem;
+            }
+            
+            .icon-container {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .icon {
+                font-size: 50px;
+            }
+            
+            .btn {
+                min-width: 100%;
+                padding: 14px 24px;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .title {
+                font-size: 2rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+            
+            .container {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Partículas de fundo -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Conteúdo principal -->
+    <div class="container">
+        <!-- Ícone animado -->
+        <div class="icon-container">
+            <i class="fas fa-user-slash icon"></i>
+        </div>
+
+        <!-- Texto principal em vermelho -->
+        <h1 class="title">SUA CONTA FOI EXCLUÍDA COM SUCESSO!</h1>
+
+        <!-- Mensagem secundária -->
+      
+        <!-- Botões de ação -->
+        <div class="buttons">
+            <a href="index.html" class="btn btn-primary">
+                <i class="fas fa-home"></i>
+                Voltar à Página Inicial
+            </a>
+            <a href="create_account.html" class="btn btn-secondary">
+                <i class="fas fa-user-plus"></i>
+                Criar Nova Conta
+            </a>
+        </div>
+
+        <!-- Contador -->
+        <div class="counter">
+            Esta página será redirecionada automaticamente em <span id="countdown">30</span> segundos
+        </div>
+    </div>
+
+    <script>
+        // Criar partículas de fundo
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Tamanho aleatório
+                const size = Math.random() * 10 + 5;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // Posição aleatória
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${Math.random() * 100 + 100}%`;
+                
+                // Atraso e duração aleatórios para animação
+                const delay = Math.random() * 5;
+                const duration = Math.random() * 10 + 15;
+                particle.style.animationDelay = `${delay}s`;
+                particle.style.animationDuration = `${duration}s`;
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Contador regressivo
+        function startCountdown() {
+            let count = 30;
+            const countdownElement = document.getElementById('countdown');
+            
+            const timer = setInterval(() => {
+                count--;
+                countdownElement.textContent = count;
+                
+                if (count <= 0) {
+                    clearInterval(timer);
+                    window.location.href = '/';
+                }
+            }, 1000);
+        }
+
+        // Inicializar quando a página carregar
+        document.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+            startCountdown();
+            
+            // Efeito de digitação no título (opcional)
+            const title = document.querySelector('.title');
+            const originalText = title.textContent;
+            title.textContent = '';
+            
+            let i = 0;
+            const typeWriter = () => {
+                if (i < originalText.length) {
+                    title.textContent += originalText.charAt(i);
+                    i++;
+                    setTimeout(typeWriter, 50);
+                }
+            };
+            
+            // Iniciar efeito de digitação após um breve delay
+            setTimeout(typeWriter, 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+/* RESET */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+/* BODY */
+body {
+    background-color: #f3f4f6;
+    min-height: 100vh;
+}
+
+/* HEADER */
+.header-top {
+    height: 75px;
+    background-color: rgb(14, 60, 160);
+}
+
+.header-bottom {
+    height: 25px;
+    background-color: rgb(255, 162, 23);
+}
+
+.logo-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: -80px;
+}
+
+.logo-main {
+    width: 140px;
+}
+
+.logo-secondary {
+    width: 70px;
+    margin-top: 10px;
+}
+
+.system-title {
+    text-align: center;
+    margin: 20px 0;
+    font-size: 26px;
+    color: #1f2937;
+}
+
+/* MAIN */
+.container {
+    display: flex;
+    justify-content: center;
+    padding: 40px 15px;
+}
+
+/* CARD */
+.card {
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 30px;
+    width: 100%;
+    max-width: 420px;
+}
+
+.card-title {
+    font-size: 28px;
+    margin-bottom: 25px;
+    color: rgb(14, 60, 160);
+}
+
+/* FORM */
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #9ca3af;
+}
+
+.form-group input:focus {
+    border-color: #e77600;
+    outline: none;
+    box-shadow: 0 0 4px rgba(228, 121, 17, 0.5);
+}
+
+.form-group small {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* TERMS */
+.terms {
+    font-size: 13px;
+    margin: 20px 0;
+    color: #4b5563;
+}
+
+.terms a {
+    color: #2563eb;
+    text-decoration: none;
+}
+
+.terms a:hover {
+    text-decoration: underline;
+}
+
+/* BUTTON */
+.btn-primary {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(to bottom, #f7dfa5, #f0c14b);
+    border: 1px solid #a88734;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(to bottom, #f5d78e, #eeb933);
+}
+
+/* LOGIN */
+.login-link {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.login-link a {
+    color: #2563eb;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.login-link a:hover {
+    text-decoration: underline;
+}

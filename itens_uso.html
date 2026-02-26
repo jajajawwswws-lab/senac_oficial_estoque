@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <h3>Teste == vs ===</h3>
+  <input type="text" id="valor1" placeholder="Primeiro valor" value="5">
+  <input type="text" id="valor2" placeholder="Segundo valor" value="5">
+  
+  <br><br>
+  <button onclick="testarIgualdade()">Testar ==</button>
+  <button onclick="testarEstrita()">Testar ===</button>
+  
+  <p id="resultado"></p>
+  <p id="tipos"></p>
+
+  <script>
+    function testarIgualdade() {
+      const val1 = document.getElementById("valor1").value;
+      const val2 = document.getElementById("valor2").value;
+      
+      const resultado = val1 == val2;
+      document.getElementById("resultado").innerHTML = 
+        `<strong>== Resultado:</strong> ${val1} == ${val2} → ${resultado}`;
+      
+      mostrarTipos(val1, val2);
+    }
+    
+    function testarEstrita() {
+      const val1 = document.getElementById("valor1").value;
+      const val2 = document.getElementById("valor2").value;
+      
+      const resultado = val1 === val2;
+      document.getElementById("resultado").innerHTML = 
+        `<strong>=== Resultado:</strong> ${val1} === ${val2} → ${resultado}`;
+      
+      mostrarTipos(val1, val2);
+    }
+    
+    function mostrarTipos(val1, val2) {
+      document.getElementById("tipos").innerHTML = 
+        `Tipos: "${val1}" (${typeof val1}) e "${val2}" (${typeof val2})`;
+    }
+  </script>
+</body>
+</html>

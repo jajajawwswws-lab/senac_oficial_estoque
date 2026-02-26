@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gerenciamento de Estoque</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkblue: '#1e3a8a',
+                        lightblue: '#3b82f6',
+                        orange: '#f97316',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .sidebar {
+            transition: all 0.3s ease;
+        }
+        .sidebar.collapsed {
+            width: 70px;
+        }
+        .sidebar.collapsed .sidebar-text {
+            display: none;
+        }
+        .sidebar.collapsed .logo-text {
+            display: none;
+        }
+        .sidebar.collapsed .nav-item {
+            justify-content: center;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        .chart-container {
+            height: 250px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <div class="sidebar bg-darkblue text-white flex flex-col w-64">
+            <div class="p-4 flex items-center border-b border-blue-800">
+                <div class="bg-orange p-2 rounded-lg">
+                    <i class="fas fa-boxes text-white text-xl"></i>
+                </div>
+                <span class="logo-text ml-3 text-xl font-bold">Senac Estoque</span>
+            </div>
+            
+            <div class="p-4 flex-1 overflow-y-auto">
+                <div class="mb-8">
+                    <div class="text-xs uppercase text-blue-300 mb-4 sidebar-text">Menu Principal</div>
+                    <a href="account.html" class="nav-item flex items-center py-2 px-3 rounded-lg bg-blue-900 mb-2">
+                        <i class="fas fa-tachometer-alt mr-3"></i>
+                        <span class="sidebar-text">Dashboard</span>
+                    </a>
+                    <a href="#" class="nav-item flex items-center py-2 px-3 rounded-lg hover:bg-blue-800 mb-2">
+                        <i class="fas fa-box-open mr-3"></i>
+                        <span class="sidebar-text">Todos os Itens</span>
+                    </a>
+                 
+
+                    <a href="#" class="nav-item flex items-center py-2 px-3 rounded-lg houver:bg-blue-800 mb-2">
+                        <i class="fas fa-box-open mr-2"></i>
+                        <span class="sidebar-text">Itens que nao estao sendo usados</span>
+                    </a>
+                </div>
+                
+                <div class="mb-8">
+                    <div class="text-xs uppercase text-blue-300 mb-4 sidebar-text">Relatórios</div>
+                    <a href="#" class="nav-item flex items-center py-2 px-3 rounded-lg hover:bg-blue-800 mb-2">
+                        <i class="fas fa-chart-bar mr-3"></i>
+                        <span class="sidebar-text">Relatórios</span>
+                    </a>
+                    <a href="#" class="nav-item flex items-center py-2 px-3 rounded-lg hover:bg-blue-800 mb-2">
+                        <i class="fas fa-file-export mr-3"></i>
+                        <span class="sidebar-text">Exportar Dados</span>
+                    </a>
+                </div>
+                
+                <div>
+                    </a>
+                    <a href="profile.html" class="nav-item flex items-center py-2 px-3 rounded-lg hover:bg-blue-800 mb-2">
+                        <i class="fas fa-user-circle mr-3"></i>
+                        <span class="sidebar-text">Perfil</span>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="p-4 border-t border-blue-800">
+                <button onclick="toggleSidebar()" class="flex items-center text-blue-200 hover:text-white">
+                    <i class="fas fa-chevron-left"></i>
+                    <span class="sidebar-text ml-2">Recolher</span>
+                </button>
+            </div>
+        </div>
+        <!-- Main Content -->
+<div class="flex-1 flex flex-col overflow-hidden">
+    <!-- Top Navigation --><header class="bg-white shadow-sm">
+    <!-- Branding/Logo Section -->
+    <div class="flex items-center justify-between px-6 py-4">
+        <!-- Left side: Logo and Title -->
+        <div class="flex items-center space-x-4">
+            <!-- Vertical Color Bars -->
+            <div class="flex flex-col h-20">
+                <div class="w-2 h-3/4 bg-blue-800"></div>
+                <div class="w-2 h-1/4 bg-orange-500"></div>
+            </div>
+            
+            <!-- Logo Images -->
+            <div class="flex items-center space-x-4">
+                <img src="senac-logo-png_seeklogo-205285.png" alt="Senac Logo" class="h-14 w-auto">
+                <img src="2066642.png" alt="Logo" class="h-8 w-auto">
+            </div>
+            
+            <!-- Page Title -->
+            <h1 class="text-xl font-semibold text-gray-800 ml-4">Menu principal</h1>
+        </div>
+
+        <!-- Right side: User Actions -->
+        <div class="flex items-center space-x-4">
+            <!-- Notifications Button -->
+            <div class="relative">
+                <button class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                    <i class="fas fa-bell text-gray-600"></i>
+                    <span class="absolute top-0 right-0 h-2 w-2 rounded-full bg-orange-500"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Main content area -->
+<main class="flex-1 overflow-y-auto p-6 bg-gray-100">
+    <!-- Summary Cards (adicionar aqui quando necessário) -->
+    
+    <!-- Charts and Recent Activity -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <!-- Status Chart - Centralizado -->
+        <div class="bg-white rounded-xl shadow-sm p-6 lg:col-span-2 flex flex-col">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-lg font-semibold">Distribuição de Status</h2>
+                <select class="border rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-orange">
+                    <option>Últimos 7 dias</option>
+                    <option>Últimos 30 dias</option>
+                    <option>Últimos 90 dias</option>
+                </select>
+            </div>
+            <!-- Container para centralizar o gráfico -->
+            <div class="flex-1 flex items-center justify-center">
+                <div class="chart-container w-full max-w-2xl mx-auto">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <h2 class="text-lg font-semibold mb-6">Atividade Recente</h2>
+            <div class="space-y-4">
+                <div class="flex items-start">
+                    <div class="p-2 bg-blue-100 rounded-lg text-blue-800 mr-3">
+                        <i class="fas fa-box-open"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium">Novo item adicionado</p>
+                        <p class="text-xs text-gray-500">Monitor Dell 24" - 2 minutos atrás</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="p-2 bg-orange-100 rounded-lg text-orange-600 mr-3">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium">Item enviado para manutenção</p>
+                        <p class="text-xs text-gray-500">Teclado Mecânico - 15 minutos atrás</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="p-2 bg-red-100 rounded-lg text-red-600 mr-3">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium">Item marcado como defeituoso</p>
+                        <p class="text-xs text-gray-500">Mouse sem fio - 1 hora atrás</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="p-2 bg-green-100 rounded-lg text-green-600 mr-3">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium">Item consertado e em uso</p>
+                        <p class="text-xs text-gray-500">Notebook Dell - 3 horas atrás</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="p-2 bg-blue-100 rounded-lg text-blue-800 mr-3">
+                        <i class="fas fa-box-open"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium">Novo item adicionado</p>
+                        <p class="text-xs text-gray-500">Cadeira Ergonômica - 5 horas atrás</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+                <!-- Inventory Tables -->
+                <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-lg font-semibold">Itens em Uso</h2>
+                        <button 
+                        
+                        id="btnAdicionarItem"
+                        class="bg-orange text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors">
+                            <i class="fas fa-plus mr-2"></i> Adicionar Item
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoria</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Localização</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Responsável</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#ITM-001</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Monitor Dell 24"</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Eletrônicos</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Sala 201</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">bot1</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <button class="visual text-blue-600 hover:text-blue-900 mr-3"><i class="fas fa-eye"></i></button>
+                                        <button class="comentario text-orange hover:text-orange-600 mr-3"><i class="fas fa-edit"></i></button>
+                                        <button class="lixeira text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#ITM-002</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Notebook Dell XPS</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Eletrônicos</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Sala 302</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">bot2</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <button class="visual text-blue-600 hover:text-blue-900 mr-3"><i class="fas fa-eye"></i></button>
+                                        <button class="comentario text-orange hover:text-orange-600 mr-3"><i class="fas fa-edit"></i></button>
+                                        <button class="lixeira text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#ITM-003</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Cadeira Ergonômica</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Mobília</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Sala 105</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">bot3</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <button class="visual text-blue-600 hover:text-blue-900 mr-3"><i class="fas fa-eye"></i></button>
+                                        <button class="comentario text-orange hover:text-orange-600 mr-3"><i class="fas fa-edit"></i></button>
+                                        <button class="lixeira text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Defective and Maintenance Items -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Defective Items -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-lg font-semibold">Itens com Defeito</h2>
+                            <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">5 novos</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                                <div>
+                                    <p class="item_dft font-medium">Monitor LG 27"</p>
+                                    <p class="description_dft text-xs text-gray-500">Defeito na tela</p>
+                                </div>
+                                <button    
+                                class="btndefeito text-orange hover:text-orange-600">
+                                    <i class="fas fa-tools"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                                <div>
+                                    <p class="item_dft font-medium">Teclado Mecânico</p>
+                                    <p class="description_dft text-xs text-gray-500">Teclas travando</p>
+                                </div>
+                                <button 
+                                class="btndefeito text-orange hover:text-orange-600">
+                                    <i class="fas fa-tools"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                                <div>
+                                    <p class="item_dft font-medium">Mouse sem fio</p>
+                                    <p class="description_dft text-xs text-gray-500">Não conecta</p>
+                                </div>
+                                <button 
+                                class="btndefeito text-orange hover:text-orange-600">
+                                    <i class="fas fa-tools"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Maintenance Items -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-lg font-semibold">Itens em Manutenção</h2>
+                            <span class="bg-orange-100 text-orange text-xs px-2 py-1 rounded-full">3 em progresso</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                                <div>
+                                    <p class="font-medium">Notebook Dell</p>
+                                    <p class="text-xs text-gray-500">Troca de bateria</p>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button class="positive text-green-600 hover:text-green-800">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button class="negative text-red-600 hover:text-red-800">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                                <div>
+                                    <p class="font-medium">Projetor Epson</p>
+                                    <p class="text-xs text-gray-500">Troca de lâmpada</p>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button class="positive text-green-600 hover:text-green-800">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button class="negative text-red-600 hover:text-red-800">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                                <div>
+                                    <p class="font-medium">Impressora HP</p>
+                                    <p class="text-xs text-gray-500">Atualização de firmware</p>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button class="positive text-green-600 hover:text-green-800">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button class="negative text-red-600 hover:text-red-800">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script src="account.js"></script>
+</body>
+</html>

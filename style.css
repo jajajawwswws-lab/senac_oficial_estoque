@@ -1,0 +1,57 @@
+body{
+        background-color: rgb(243, 248, 257)
+    }
+    .amazon-orange {
+        background: linear-gradient(to bottom, #eb965d, #ffa632);
+    }
+    .amazon-orange:hover {
+        background: linear-gradient(to bottom, #f70606, #f80b0b);
+    }
+    .amazon-blue {
+        color: #0066c0;
+    }
+    .amazon-dark-blue {
+        color: #003366;
+    }
+    .input-focus:focus {
+        box-shadow: 0 0 0 3px #f90, 0 1px 2px rgba(76, 226, 16, 0.15) inset;
+        border-color: #ff0707;
+    }
+    .divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #767676;
+    margin: 1rem 0;
+    }
+    .divider::before, .divider::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid #e7e7e7;
+    }
+    .divider::before {
+    margin-right: .5em;
+    }
+    .divider::after {
+    margin-left: .5em;
+    }
+    .logo{
+    display: block;
+    margin-top: auto;
+    margin-left: auto;
+    margin-right: auto;
+    width: 32%;
+    height: auto;
+    }
+    .caixa{
+  display: block;
+    margin-top: auto;
+    margin-left: auto;
+    margin-right: auto;
+    width: 11%;
+    height: auto;
+    }
+    
+    .p{
+    color: #003366;
+    }

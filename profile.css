@@ -1,0 +1,204 @@
+/* Profile.css - Estilos específicos para a página de perfil */
+
+/* Sidebar styles (mantidos do original) */
+.sidebar {
+    transition: all 0.3s ease;
+}
+
+.sidebar.collapsed {
+    width: 70px;
+}
+
+.sidebar.collapsed .sidebar-text {
+    display: none;
+}
+
+.sidebar.collapsed .logo-text {
+    display: none;
+}
+
+.sidebar.collapsed .nav-item {
+    justify-content: center;
+}
+
+.card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.chart-container {
+    height: 250px;
+}
+
+/* Profile-specific styles */
+.profile-avatar {
+    position: relative;
+    width: 128px;
+    height: 128px;
+}
+
+.edit-avatar-btn {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background-color: #3b82f6;
+    color: white;
+    border: 2px solid white;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.edit-avatar-btn:hover {
+    background-color: #2563eb;
+    transform: scale(1.1);
+}
+
+/* Activity timeline */
+.activity-timeline {
+    position: relative;
+    padding-left: 24px;
+}
+
+.activity-timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #e5e7eb;
+}
+
+.activity-item {
+    position: relative;
+    margin-bottom: 24px;
+}
+
+.activity-item:last-child {
+    margin-bottom: 0;
+}
+
+.activity-icon {
+    position: absolute;
+    left: -24px;
+    top: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: white;
+    border: 2px solid #f97316;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f97316;
+    font-size: 10px;
+    z-index: 1;
+}
+
+.activity-content {
+    padding-left: 16px;
+}
+
+.activity-content p {
+    margin-bottom: 4px;
+}
+
+/* Toggle switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 52px;
+    height: 26px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #f97316;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .profile-avatar {
+        margin: 0 auto;
+    }
+    
+    .activity-timeline {
+        padding-left: 20px;
+    }
+    
+    .activity-icon {
+        left: -20px;
+    }
+}
+
+/* Animation for page load */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.card-hover {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Custom scrollbar for activity timeline */
+.activity-timeline::-webkit-scrollbar {
+    width: 6px;
+}
+
+.activity-timeline::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.activity-timeline::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+
+.activity-timeline::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+.logo {
+    display: block;
+    margin: 1 auto;
+}

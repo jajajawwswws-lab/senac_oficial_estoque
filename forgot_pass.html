@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <title>Esqueceu sua senha</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="create_acct_style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+    <!-- Cabeçalho -->
+    <header>
+        <div style="height:75px;background-color:rgb(14,60,160);"></div>
+        <div style="height:25px;background-color:rgb(255,162,23);"></div>
+
+        <img src="logo.png" alt="logo"
+             style="width:145px;margin:auto;display:block;">
+        <img src="user.png" alt="user"
+             style="width:70px;margin:auto;display:block;">
+    </header>
+
+    <!-- Conteúdo -->
+    <main class="container mx-auto px-4 max-w-md mt-8 mb-20">
+        <div class="border border-gray-300 rounded-md p-6">
+
+            <h1 class="text-2xl font-normal mb-4 text-blue-700">
+                Esqueceu sua senha?
+            </h1>
+
+            <p class="text-sm mb-4 text-gray-600">
+                Digite seu e-mail para receber instruções de redefinição de senha.
+            </p>
+
+            <form action="#" method="post" class="space-y-4">
+
+                <div>
+                    <label for="email" class="font-bold">Email</label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        required
+                        class="w-full mt-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="exemplo@email.com"
+                    >
+                </div>
+
+                <button
+                    type="submit"
+                    class="w-full bg-yellow-400 border border-gray-400 rounded py-1 text-sm font-medium hover:bg-yellow-500"
+                >
+                    Enviar link de redefinição
+                </button>
+
+                <div class="text-center mt-4">
+                    <a href="login.html" class="text-sm text-blue-700 hover:underline">
+                        Voltar para o login
+                    </a>
+                </div>
+
+            </form>
+        </div>
+    </main>
+
+</body>
+</html>

@@ -1,0 +1,65 @@
+/* style_header.css */
+
+/* Cores do topo e efeitos de foco */
+.amazon-blue {
+    color: rgb(14, 60, 160);
+}
+
+.amazon-orange {
+    background: linear-gradient(to bottom, #f7dfa5, #f0c14b);
+    border-color: #a88734 #9c7e31 #846a29;
+}
+
+.amazon-orange:hover {
+    background: linear-gradient(to bottom, #f5d78e, #eeb933);
+}
+
+.input-focus:focus {
+    border-color: #e77600;
+    box-shadow: 0 0 3px 2px rgba(228, 121, 17, 0.5);
+    outline: none;
+}
+
+/* Topo azul e laranja */
+.header-gradient {
+    height: 75px;
+    background-color: rgb(14, 60, 160); /* azul */
+}
+
+.header-accent {
+    height: 25px;
+    background-color: rgb(255, 162, 23); /* laranja */
+}
+
+/* Logos */
+.logo-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: -80px;
+    position: relative;
+    z-index: 10;
+}
+
+.main-logo {
+    width: 145px;
+    height: auto;
+}
+
+.secondary-logo {
+    width: 70px;
+    height: auto;
+    margin-top: 10px;
+}
+
+/* Feedback de senha */
+.password-match {
+    border-color: #10b981 !important;
+}
+
+.password-mismatch {
+    border-color: #ef4444 !important;
+}
+body {
+    background-color: pink !important;
+}
