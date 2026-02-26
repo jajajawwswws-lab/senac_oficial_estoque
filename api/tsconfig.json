@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    // 📁 File Layout - ESSENCIAL para seu projeto
+    "rootDir": "./",
+    "outDir": "./",
+    
+    // 🌍 Environment Settings - Para Node.js na Vercel
+    "module": "commonjs",           // Mudamos de "nodenext" para "commonjs" (melhor para Vercel)
+    "target": "es2020",              // Um pouco mais estável que "esnext"
+    "lib": ["es2020"],               // Adicionamos bibliotecas ES2020
+    "types": ["node"],               // IMPORTANTE: Adicionamos types do node
+    
+    // 📦 Other Outputs - Úteis para debug
+    "sourceMap": true,               
+    "declaration": true,             // Gera arquivos .d.ts (tipos)
+    "declarationMap": true,           // Mapa para os arquivos .d.ts
+    
+    // 🔒 Stricter Typechecking - Mantém seu código seguro
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,        // Descomentamos - útil
+    "noImplicitOverride": true,        // Descomentamos - útil
+    "noUnusedLocals": true,            // Descomentamos - alerta sobre variáveis não usadas
+    "noUnusedParameters": true,        // Descomentamos - alerta sobre parâmetros não usados
+    "noFallthroughCasesInSwitch": true,
+    "noPropertyAccessFromIndexSignature": true,
+    
+    // ⚙️ Recommended Options - Ajustados
+    "jsx": "react-jsx",                // Mantém, mesmo sem React (não atrapalha)
+    "verbatimModuleSyntax": false,      // Mudamos para false (melhor com commonjs)
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true,
+    
+    // ➕ Extra options úteis
+    "resolveJsonModule": true,          // Permite importar arquivos JSON
+    "esModuleInterop": true,             // Melhor compatibilidade com módulos CommonJS
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
