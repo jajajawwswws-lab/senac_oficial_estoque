@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitButton = document.getElementById('submitButton');
 
     // 🔑 CHAVE CORRETA DO SITE
-    const RECAPTCHA_SITE_KEY = '6LeJZ28sAAAAAMgcIEAe0vm2GHIKZUZRucVyeiYU';
+    const RECAPTCHA_SITE_KEY = '6LctSXksAAAAAM19sUp0Z0wRZ7nAMIxlLGe7EDgf';
 
     // Validação em tempo real
     let isFormValid = {
@@ -324,3 +324,4 @@ document.addEventListener('DOMContentLoaded', function() {
         confirmPasswordInput.dispatchEvent(new Event('input'));
     }, 100);
 });
+
