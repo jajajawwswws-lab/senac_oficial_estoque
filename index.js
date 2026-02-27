@@ -1,6 +1,88 @@
 // ===============================
-// Validação de campos
+// SISTEMA DE LOGIN SIMPLIFICADO
 // ===============================
+
+// Verificar se já está logado
+const sessao = JSON.parse(localStorage.getItem('sessao'));
+if (sessao && sessao.email) {
+    // Se já estiver logado, redireciona para account
+    window.location.href = "account.html";
+}
+
+// Configurar toggle de senha
+function setupPasswordToggle() {
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+    
+    if (togglePassword && passwordInput) {
+        togglePassword.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            const icon = this.querySelector('i');
+            if (icon) {
+                icon.classList.toggle('fa-eye');
+                icon.classList.toggle('fa-eye-slash');
+            }
+        });
+    }
+}
+
+// Limpar mensagens
+function limparMensagens() {
+    const resultado = document.getElementById('resultado');
+    if (resultado) {
+        resultado.textContent = '';
+        resultado.style.color = '';
+        resultado.style.backgroundColor = '';
+    }
+    
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    
+    if (emailInput) emailInput.classList.remove('border-red-500');
+    if (passwordInput) passwordInput.classList.remove('border-red-500');
+}
+
+// Mostrar erro
+function mostrarErro(mensagem, campo = null) {
+    const resultado = document.getElementById('resultado');
+    if (resultado) {
+        resultado.style.color = 'red';
+        resultado.style.backgroundColor = '#ffeeee';
+        resultado.style.border = '1px solid #ffcccc';
+        resultado.style.padding = '10px';
+        resultado.style.borderRadius = '5px';
+        resultado.style.marginTop = '10px';
+        resultado.textContent = mensagem;
+    }
+    
+    if (campo === 'email') {
+        document.getElementById('email')?.classList.add('border-red-500');
+    } else if (campo === 'password') {
+        document.getElementById('password')?.classList.add('border-red-500');
+    }
+}
+
+// Mostrar sucesso
+function mostrarSucesso(mensagem) {
+    const resultado = document.getElementById('resultado');
+    if (resultado) {
+        resultado.style.color = 'green';
+        resultado.style.backgroundColor = '#eeffee';
+        resultado.style.border = '1px solid #ccffcc';
+        resultado.style.padding = '15px';
+        resultado.style.borderRadius = '5px';
+        resultado.style.marginTop = '10px';
+        resultado.style.textAlign = 'center';
+        resultado.innerHTML = `
+            <div style="font-size: 18px; margin-bottom: 10px;">✅ ${mensagem}</div>
+            <div style="font-size: 12px; color: #888;">Redirecionando...</div>
+        `;
+    }
+}
+
+// Validar campos
 function validarCampos(email, password) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -27,169 +109,76 @@ function validarCampos(email, password) {
     return true;
 }
 
-// ===============================
-// Mostrar/ocultar senha
-// ===============================
-function setupPasswordToggle() {
-    const togglePassword = document.getElementById('togglePassword');
-    const passwordInput = document.getElementById('password');
-    
-    if (togglePassword && passwordInput) {
-        togglePassword.addEventListener('click', function() {
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
-            
-            const icon = this.querySelector('i');
-            if (icon) {
-                icon.classList.toggle('fa-eye');
-                icon.classList.toggle('fa-eye-slash');
-            }
-        });
-    }
-}
-
-// ===============================
-// Limpar mensagens
-// ===============================
-function limparMensagens() {
-    const resultado = document.getElementById('resultado');
-    if (resultado) {
-        resultado.textContent = '';
-        resultado.style.color = '';
-        resultado.style.backgroundColor = '';
-    }
-    
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
-    
-    if (emailInput) emailInput.classList.remove('border-red-500');
-    if (passwordInput) passwordInput.classList.remove('border-red-500');
-}
-
-// ===============================
-// Mostrar erro
-// ===============================
-function mostrarErroCampo(inputElement, mensagem) {
-    if (inputElement) {
-        inputElement.classList.add('border-red-500');
-    }
-    
-    const resultado = document.getElementById('resultado');
-    if (resultado) {
-        resultado.style.color = 'red';
-        resultado.style.backgroundColor = '#ffeeee';
-        resultado.style.border = '1px solid #ffcccc';
-        resultado.style.padding = '10px';
-        resultado.textContent = mensagem;
-    }
-}
-
-// ===============================
-// Mostrar sucesso
-// ===============================
-function mostrarSucesso(mensagem) {
-    const resultado = document.getElementById('resultado');
-    if (resultado) {
-        resultado.style.color = 'green';
-        resultado.style.backgroundColor = '#eeffee';
-        resultado.style.border = '1px solid #ccffcc';
-        resultado.style.padding = '10px';
-        resultado.textContent = mensagem;
-    }
-}
-
-// ===============================
 // Callback do reCAPTCHA
-// ===============================
-let isSubmitting = false;
-
 window.onSubmit = function(token) {
-    console.log("🔑 onSubmit chamado");
-    
-    if (isSubmitting) return;
+    console.log("🔑 Fazendo login...");
     
     limparMensagens();
     
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
+    const email = document.getElementById('email')?.value.trim();
+    const password = document.getElementById('password')?.value;
     const resultado = document.getElementById('resultado');
-    const loginButton = document.getElementById('loginButton');
     
-    if (!emailInput || !passwordInput || !resultado) {
-        alert('Erro ao carregar o formulário');
+    if (!email || !password) {
+        alert('Preencha todos os campos');
+        if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
         return;
     }
     
-    const email = emailInput.value.trim();
-    const password = passwordInput.value;
-
     if (!validarCampos(email, password)) {
         if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
         return;
     }
-
-    isSubmitting = true;
-    if (loginButton) loginButton.disabled = true;
     
     resultado.textContent = "🔄 Verificando...";
-
-    // ===== SIMULAÇÃO DE BACKEND USANDO LOCALSTORAGE =====
+    
+    // ===== SIMULAR DELAY DE REDE =====
     setTimeout(() => {
         try {
             // Buscar usuários do LocalStorage
             const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+            
             console.log("📋 Usuários cadastrados:", usuarios);
             
             // Procurar usuário
             const usuario = usuarios.find(u => u.email === email);
             
             if (!usuario) {
-                resultado.style.color = "red";
-                resultado.textContent = "❌ E-mail não cadastrado!";
-                mostrarErroCampo(emailInput, "E-mail não encontrado");
+                mostrarErro("❌ E-mail não cadastrado!", 'email');
                 if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
-                isSubmitting = false;
-                if (loginButton) loginButton.disabled = false;
                 return;
             }
             
             if (usuario.password !== password) {
-                resultado.style.color = "red";
-                resultado.textContent = "❌ Senha incorreta!";
-                mostrarErroCampo(passwordInput, "Senha incorreta");
+                mostrarErro("❌ Senha incorreta!", 'password');
                 if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
-                isSubmitting = false;
-                if (loginButton) loginButton.disabled = false;
                 return;
             }
             
             // Sucesso!
-            mostrarSucesso("✅ Login realizado com sucesso! Redirecionando...");
+            mostrarSucesso("Login realizado com sucesso!");
             
-            // Salvar sessão (opcional)
+            // Salvar sessão
             localStorage.setItem('sessao', JSON.stringify({
                 email: usuario.email,
                 username: usuario.username,
                 loginTime: new Date().toISOString()
             }));
             
+            // Redirecionar
             setTimeout(() => {
                 window.location.href = "account.html";
             }, 1500);
             
         } catch (error) {
             console.error("Erro:", error);
-            resultado.style.color = "red";
-            resultado.textContent = "❌ Erro ao processar login";
-            isSubmitting = false;
-            if (loginButton) loginButton.disabled = false;
+            mostrarErro("❌ Erro ao fazer login");
+            if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
         }
-    }, 1000); // Simular delay de rede
+    }, 1000);
 };
 
-// ===============================
-// Inicialização
-// ===============================
+// Inicializar
 document.addEventListener('DOMContentLoaded', function() {
     console.log("📄 Página carregada");
     
@@ -207,7 +196,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     loginForm.addEventListener('submit', function(event) {
         event.preventDefault();
-        // O reCAPTCHA v2 chama onSubmit automaticamente
+        if (typeof grecaptcha !== 'undefined') {
+            grecaptcha.execute();
+        }
     });
     
     // Limpar mensagens ao digitar
@@ -225,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Mostrar usuários cadastrados (para debug)
+    // Mostrar usuários para debug
     const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
-    console.log("📋 Usuários no LocalStorage:", usuarios);
+    console.log("📋 Usuários disponíveis:", usuarios);
 });
