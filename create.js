@@ -1,4 +1,4 @@
-// create_account.js - VERSÃO FINAL COM CORREÇÃO DO RECAPTCHA
+// create_account.js - VERSÃO COM LOCALSTORAGE FUNCIONAL
 
 // DEFINIR A FUNÇÃO GLOBAL ONSUBMIT IMEDIATAMENTE (fora do DOMContentLoaded)
 window.onSubmit = function(token) {
@@ -295,7 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Variável de controle para evitar múltiplos envios
     let isSubmitting = false;
 
-    // SOBRESCREVER a função global onSubmit com a implementação real
+    // IMPLEMENTAÇÃO CORRIGIDA COM LOCALSTORAGE
     window.onSubmit = function(token) {
         // Prevenir múltiplos envios
         if(isSubmitting) {
@@ -314,9 +314,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const gmail = emailInput.value.trim();
         const pass_word = passwordInput.value.trim();
         const require_pass_word = confirmPasswordInput.value.trim();
+        const username = usernameInput ? usernameInput.value.trim() : '';
+        const phone = phoneInput ? phoneInput.value.trim() : '';
 
         // Validar campos
         if(!validarCampos(gmail, pass_word, require_pass_word)) {
+            return;
+        }
+
+        // Validar username
+        if (!username || username.length < 3) {
+            result.style.color = "red";
+            result.textContent = "❌ Nome de usuário inválido!";
             return;
         }
 
@@ -325,51 +334,62 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Mostrar mensagem de carregamento
         result.style.color = "black";
-        result.textContent = "🔄 Verificando conta...";
+        result.textContent = "🔄 Criando sua conta...";
 
-        // Fazer requisição para a API
-        fetch('/api/crtback', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email: gmail,
-                password: pass_word,
-                confirm_password: require_pass_word,
-                recaptchaToken: token
-            })
-        })
-        .then(async response => {
-            if (!response.ok) {
-                const data = await response.json().catch(() => ({}));
-                throw new Error(data.error || `Erro HTTP: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log("Resposta do backend:", data);
+        // SIMULAÇÃO DE DELAY (para parecer que está processando)
+        setTimeout(() => {
+            try {
+                // ===== SALVAR NO LOCALSTORAGE =====
+                // 1. Buscar usuários existentes
+                const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+                
+                console.log("📋 Usuários existentes:", usuarios);
 
-            if (data.success) {
+                // 2. Verificar se email já existe
+                if (usuarios.some(u => u.email === gmail)) {
+                    result.style.color = "red";
+                    result.textContent = "❌ Este email já está cadastrado!";
+                    isSubmitting = false;
+                    return;
+                }
+
+                // 3. Criar novo usuário
+                const novoUsuario = {
+                    email: gmail,
+                    password: pass_word,
+                    username: username,
+                    phone: phone || '',
+                    createdAt: new Date().toISOString()
+                };
+
+                // 4. Adicionar à lista
+                usuarios.push(novoUsuario);
+
+                // 5. SALVAR NO LOCALSTORAGE
+                localStorage.setItem('usuarios', JSON.stringify(usuarios));
+
+                // 6. LOG PARA VERIFICAR
+                console.log("✅ USUÁRIO SALVO COM SUCESSO!");
+                console.log("📋 Dados salvos:", novoUsuario);
+                console.log("📊 Total de usuários agora:", usuarios.length);
+                console.log("👤 Todos os usuários:", usuarios.map(u => u.email));
+
+                // 7. Mostrar sucesso
                 result.style.color = "green";
                 result.textContent = "✅ Conta criada com sucesso!";
 
-                // Redirecionar após 1 segundo
+                // 8. Redirecionar para login
                 setTimeout(() => {
                     window.location.href = "index.html";
-                }, 1000);
-            } else {
+                }, 2000);
+
+            } catch (error) {
+                console.error("❌ Erro ao salvar:", error);
                 result.style.color = "red";
-                result.textContent = data.error || "Erro ao criar conta!";
+                result.textContent = "❌ Erro ao criar conta. Tente novamente.";
                 isSubmitting = false;
             }
-        })
-        .catch(error => {
-            console.error("Erro:", error);
-            result.style.color = "red";
-            result.textContent = "❌ Erro de conexão com o servidor.";
-            isSubmitting = false;
-        });
+        }, 1500); // Delay de 1.5 segundos
     };
 
     // Adicionar evento de clique ao botão para executar reCAPTCHA
