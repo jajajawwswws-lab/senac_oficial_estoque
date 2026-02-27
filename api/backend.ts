@@ -81,7 +81,7 @@ async function ServerRequest(request: IncomingMessage, response: ServerResponse)
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: new URLSearchParams({
-                secret: '6LeJZ28sAAAAAO3iQx4CXaN7xAvZNw2fnaacmCYE', // Your secret key
+                secret: '6LctSXksAAAAALmMFlvRvFJ9o1D2gUqt_lbvOVUg', // Your secret key
                 response: recaptchaToken
             })
         });
@@ -148,3 +148,4 @@ async function ServerRequest(request: IncomingMessage, response: ServerResponse)
 // }
 export default ServerRequest;
 // export type { Handler };
+
