@@ -1,5 +1,29 @@
 import { IncomingMessage, ServerResponse } from "node:http";
 
+// ====================================================
+// ARRAY EM MEMÓRIA PARA ARMAZENAR OS USUÁRIOS
+// ====================================================
+// Este array será preenchido pelo crtback.ts (registro)
+// e consultado por este backend.ts (login)
+interface User {
+    email: string;
+    password: string; // Em produção, isso deveria ser hash!
+    username?: string;
+    phone?: string;
+    createdAt: Date;
+}
+
+// Array global de usuários (compartilhado entre os endpoints)
+// Em um sistema real, isso seria um banco de dados
+declare global {
+    var users: User[];
+}
+
+// Inicializar o array se não existir
+if (!global.users) {
+    global.users = [];
+}
+
 // Interface for the expected request body
 interface LoginRequest {
     email: string;
@@ -52,12 +76,13 @@ async function ServerRequest(request: IncomingMessage, response: ServerResponse)
 
         // Parse the body as LoginRequest
         const data: LoginRequest = JSON.parse(bodyData);
-        console.log('Body recebido:', data);
+        console.log('Body recebido:', {
+            email: data.email,
+            password: data.password ? '[PRESENT]' : '[MISSING]',
+            recaptchaToken: data.recaptchaToken ? '[PRESENT]' : '[MISSING]'
+        });
 
         const { email, password, recaptchaToken } = data;
-        console.log('Email:', email);
-        console.log('Password:', password ? '[PRESENT]' : '[MISSING]');
-        console.log('Token:', recaptchaToken);
 
         // Validate required fields
         if (!email || !password || !recaptchaToken) {
@@ -65,11 +90,7 @@ async function ServerRequest(request: IncomingMessage, response: ServerResponse)
             response.end(JSON.stringify({
                 success: false,
                 error: 'Campos obrigatórios não preenchidos',
-                details: {
-                    email: !email,
-                    password: !password,
-                    recaptchaToken: !recaptchaToken
-                }
+                field: !email ? 'email' : !password ? 'password' : 'recaptcha'
             }));
             return;
         }
@@ -81,7 +102,7 @@ async function ServerRequest(request: IncomingMessage, response: ServerResponse)
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: new URLSearchParams({
-                secret: '6LctSXksAAAAALmMFlvRvFJ9o1D2gUqt_lbvOVUg', // Your secret key
+                secret: '6LctSXksAAAAALmMFlvRvFJ9o1D2gUqt_lbvOVUg', // ⚠️ Coloque sua secret key real aqui!
                 response: recaptchaToken
             })
         });
@@ -95,33 +116,72 @@ async function ServerRequest(request: IncomingMessage, response: ServerResponse)
             response.end(JSON.stringify({
                 success: false,
                 error: 'reCAPTCHA inválido',
-                details: verifyDataAPI
+                field: 'recaptcha'
             }));
             return;
         }
 
-        console.log('reCAPTCHA válido!');
+        // Opcional: verificar score do reCAPTCHA v3
+     
 
-        // Check credentials (example hardcoded check)
-        if (email !== "senac@gmail.com" || password !== "senacoficialmnbvcxz321#@!") {
+        console.log('✅ reCAPTCHA válido!');
+
+        // ====================================================
+        // CONSULTAR O ARRAY DE USUÁRIOS EM MEMÓRIA
+        // ====================================================
+        console.log('📋 Usuários cadastrados:', global.users.map(u => u.email));
+        
+        // Buscar usuário pelo email
+        const user = global.users.find(u => u.email === email);
+
+        if (!user) {
+            console.log(`❌ Email não encontrado: ${email}`);
             response.statusCode = 401;
             response.end(JSON.stringify({
                 success: false,
-                error: "Credenciais inválidas"
+                error: "E-mail não encontrado. Crie uma conta primeiro.",
+                field: 'email'
             }));
             return;
         }
-//lkm
-        // Success response
+
+        console.log(`✅ Usuário encontrado: ${user.email}`);
+
+        // ====================================================
+        // VERIFICAR A SENHA
+        // ====================================================
+        // ⚠️ IMPORTANTE: No crtback.ts você PRECISA armazenar a senha!
+        // Como não temos hash, comparamos diretamente (NÃO SEGURO para produção!)
+        if (user.password !== password) {
+            console.log(`❌ Senha incorreta para: ${email}`);
+            response.statusCode = 401;
+            response.end(JSON.stringify({
+                success: false,
+                error: "Senha incorreta",
+                field: 'password'
+            }));
+            return;
+        }
+
+        console.log(`✅ Senha válida para: ${email}`);
+
+        // ====================================================
+        // LOGIN BEM-SUCEDIDO
+        // ====================================================
         response.statusCode = 200;
         response.end(JSON.stringify({
             success: true,
             message: 'Login realizado com sucesso!',
-            data: { email }
+            data: {
+                email: user.email,
+                username: user.username,
+                // Não retornamos a senha!
+            },
+            redirect: 'account.html'
         }));
 
     } catch (error) {
-        console.error('Erro no backend:', error);
+        console.error('❌ Erro no backend:', error);
         
         // Handle JSON parse errors specifically
         if (error instanceof SyntaxError) {
@@ -142,9 +202,4 @@ async function ServerRequest(request: IncomingMessage, response: ServerResponse)
     }
 }
 
-// This function seems unnecessary for your use case
-// async function Handler(req: any, res: any): Promise<string> {
-//     return `User ${req.nome} and ${res.email}`;
-// }
 export default ServerRequest;
-// export type { Handler };
