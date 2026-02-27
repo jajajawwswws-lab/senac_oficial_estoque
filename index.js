@@ -1,57 +1,34 @@
 // ===============================
-// LOGIN COM LOCALSTORAGE - VERSÃO COM DEBUG
+// LOGIN COM LOCALSTORAGE - VERSÃO CORRIGIDA
 // ===============================
 
 // Verificar se já está logado
-try {
-    const sessao = JSON.parse(localStorage.getItem('sessao'));
-    if (sessao && sessao.email) {
-        console.log("✅ Já logado como:", sessao.email);
-        window.location.href = "account.html";
-    }
-} catch (e) {
-    console.log("Nenhuma sessão ativa");
+const sessao = JSON.parse(localStorage.getItem('sessao'));
+if (sessao && sessao.email) {
+    window.location.href = "account.html";
 }
 
 let isSubmitting = false;
 
 window.onSubmit = function(token) {
     console.log("🔑 Tentativa de login...");
-    console.log("Token reCAPTCHA:", token ? "✅ OK" : "❌ Ausente");
 
-    if (isSubmitting) {
-        console.log("⏳ Já processando...");
-        return;
-    }
+    if (isSubmitting) return;
 
-    // Pegar elementos
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
-    const resultadoDiv = document.getElementById('result');
+    const resultadoDiv = document.getElementById('resultado'); // ✅ AGORA ESTÁ CERTO!
 
-    // DEBUG: Verificar elementos
-    console.log("📋 Elementos do formulário:");
-    console.log("- Email input:", emailInput ? "✅" : "❌");
-    console.log("- Password input:", passwordInput ? "✅" : "❌");
-    console.log("- Result div:", resultadoDiv ? "✅" : "❌");
-
-    if (!emailInput || !passwordInput || !resultadoDiv) {
-        alert("Erro ao carregar formulário. Recarregue a página.");
-        return;
+    // Limpar mensagens anteriores
+    if (resultadoDiv) {
+        resultadoDiv.textContent = '';
+        resultadoDiv.style.color = '';
     }
+    emailInput?.classList.remove('border-red-500');
+    passwordInput?.classList.remove('border-red-500');
 
-    // Limpar mensagens
-    resultadoDiv.textContent = '';
-    resultadoDiv.style.color = '';
-    emailInput.classList.remove('border-red-500');
-    passwordInput.classList.remove('border-red-500');
-
-    const email = emailInput.value.trim();
-    const password = passwordInput.value;
-
-    console.log("📝 Dados do formulário:");
-    console.log("- Email digitado:", email);
-    console.log("- Senha digitada:", password ? "******" : "❌ VAZIA");
+    const email = emailInput?.value.trim();
+    const password = passwordInput?.value;
 
     if (!email || !password) {
         alert("Preencha todos os campos!");
@@ -60,58 +37,36 @@ window.onSubmit = function(token) {
     }
 
     isSubmitting = true;
-    resultadoDiv.textContent = "🔄 Verificando...";
+    if (resultadoDiv) resultadoDiv.textContent = "🔄 Verificando...";
 
     setTimeout(() => {
         try {
-            // Buscar usuários do LocalStorage
             const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
             
-            console.log("📊 TOTAL DE USUÁRIOS NO SISTEMA:", usuarios.length);
-            console.log("📋 LISTA COMPLETA DE EMAILS CADASTRADOS:");
-            usuarios.forEach((u, i) => {
-                console.log(`   ${i+1}. "${u.email}"`);
-            });
+            console.log("📋 Usuários cadastrados:", usuarios.map(u => u.email));
 
-            // Procurar email (ignorando maiúsculas/minúsculas)
             const usuario = usuarios.find(u => 
                 u.email.toLowerCase().trim() === email.toLowerCase().trim()
             );
 
-            console.log("🔍 RESULTADO DA BUSCA:");
-            if (usuario) {
-                console.log("   ✅ Email ENCONTRADO!");
-                console.log("   - Username:", usuario.username);
-                console.log("   - Senha no sistema:", usuario.password);
-                console.log("   - Senha fornecida:", password);
-            } else {
-                console.log("   ❌ Email NÃO ENCONTRADO na lista acima");
-            }
-
             if (!usuario) {
                 resultadoDiv.style.color = 'red';
                 resultadoDiv.textContent = "❌ E-mail não cadastrado!";
-                emailInput.classList.add('border-red-500');
+                emailInput?.classList.add('border-red-500');
                 isSubmitting = false;
                 if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
                 return;
             }
 
             if (usuario.password !== password) {
-                console.log("❌ SENHA INCORRETA");
-                console.log("   - Esperada:", usuario.password);
-                console.log("   - Recebida:", password);
-                
                 resultadoDiv.style.color = 'red';
                 resultadoDiv.textContent = "❌ Senha incorreta!";
-                passwordInput.classList.add('border-red-500');
+                passwordInput?.classList.add('border-red-500');
                 isSubmitting = false;
                 if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
                 return;
             }
 
-            // SUCESSO!
-            console.log("🎉 LOGIN BEM-SUCEDIDO!");
             resultadoDiv.style.color = 'green';
             resultadoDiv.textContent = "✅ Login realizado! Redirecionando...";
 
@@ -126,9 +81,9 @@ window.onSubmit = function(token) {
             }, 1500);
 
         } catch (error) {
-            console.error("❌ ERRO GRAVE:", error);
+            console.error("❌ Erro:", error);
             resultadoDiv.style.color = 'red';
-            resultadoDiv.textContent = "❌ Erro interno. Tente novamente.";
+            resultadoDiv.textContent = "❌ Erro interno.";
             isSubmitting = false;
             if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
         }
@@ -136,17 +91,15 @@ window.onSubmit = function(token) {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("📄 PÁGINA DE LOGIN CARREGADA");
+    console.log("📄 Página de login carregada");
     
-    // MOSTRAR STATUS ATUAL
     const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
-    console.log("📊 USUÁRIOS DISPONÍVEIS AGORA:", usuarios.length);
-    console.log("📋 EMAIS CADASTRADOS:", usuarios.map(u => u.email));
+    console.log("Usuários disponíveis:", usuarios.length);
 
     const loginForm = document.getElementById('loginForm');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
-    const resultadoDiv = document.getElementById('result');
+    const resultadoDiv = document.getElementById('resultado'); // ✅ TAMBÉM CORRIGIDO AQUI
 
     if (loginForm) {
         loginForm.addEventListener('submit', (e) => e.preventDefault());
