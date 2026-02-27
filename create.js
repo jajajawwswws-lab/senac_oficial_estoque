@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 // Criação do cliente Supabase
 const supabase = createClient(
   'https://vercel_icfg_zw4SbRdBbh4Wc6N5T8IK5Ybk.supabase.co', 
@@ -401,3 +401,4 @@ document.addEventListener('DOMContentLoaded', function() {
         confirmPasswordInput.dispatchEvent(new Event('input'));
     }, 100);
 });
+
