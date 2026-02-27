@@ -1,4 +1,4 @@
-// create_account.js - VERSÃO COM LOCALSTORAGE FUNCIONAL
+// create_account.js - VERSÃO FINAL COM LOCALSTORAGE FUNCIONAL
 
 // DEFINIR A FUNÇÃO GLOBAL ONSUBMIT IMEDIATAMENTE (fora do DOMContentLoaded)
 window.onSubmit = function(token) {
@@ -256,7 +256,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateSubmitButton() {
         const allValid = isFormValid.username && 
                         isFormValid.email && 
-                        isFormValid.phone && // Incluir phone na validação
+                        isFormValid.phone && 
                         isFormValid.password && 
                         isFormValid.confirmPassword;
         
@@ -273,29 +273,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Função de validação de campos
-    function validarCampos(email, password, confirmPassword) {
-        if (!email || !password || !confirmPassword) {
-            if (result) {
-                result.style.color = "red";
-                result.textContent = "❌ Todos os campos são obrigatórios!";
-            }
-            return false;
-        }
-        if (password !== confirmPassword) {
-            if (result) {
-                result.style.color = "red";
-                result.textContent = "❌ As senhas não coincidem!";
-            }
-            return false;
-        }
-        return true;
-    }
-
     // Variável de controle para evitar múltiplos envios
     let isSubmitting = false;
 
-    // IMPLEMENTAÇÃO CORRIGIDA COM LOCALSTORAGE
+    // IMPLEMENTAÇÃO CORRIGIDA - SALVA NO LOCALSTORAGE
     window.onSubmit = function(token) {
         // Prevenir múltiplos envios
         if(isSubmitting) {
@@ -318,14 +299,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const phone = phoneInput ? phoneInput.value.trim() : '';
 
         // Validar campos
-        if(!validarCampos(gmail, pass_word, require_pass_word)) {
+        if (!gmail || !pass_word || !require_pass_word || !username) {
+            result.style.color = "red";
+            result.textContent = "❌ Preencha todos os campos!";
             return;
         }
 
-        // Validar username
-        if (!username || username.length < 3) {
+        if (pass_word !== require_pass_word) {
             result.style.color = "red";
-            result.textContent = "❌ Nome de usuário inválido!";
+            result.textContent = "❌ As senhas não conferem!";
+            return;
+        }
+
+        if (pass_word.length < 8) {
+            result.style.color = "red";
+            result.textContent = "❌ A senha deve ter pelo menos 8 caracteres!";
             return;
         }
 
@@ -336,16 +324,15 @@ document.addEventListener('DOMContentLoaded', function() {
         result.style.color = "black";
         result.textContent = "🔄 Criando sua conta...";
 
-        // SIMULAÇÃO DE DELAY (para parecer que está processando)
+        // ===== SALVAR NO LOCALSTORAGE =====
         setTimeout(() => {
             try {
-                // ===== SALVAR NO LOCALSTORAGE =====
-                // 1. Buscar usuários existentes
+                // Buscar usuários existentes
                 const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
                 
                 console.log("📋 Usuários existentes:", usuarios);
 
-                // 2. Verificar se email já existe
+                // Verificar se email já existe
                 if (usuarios.some(u => u.email === gmail)) {
                     result.style.color = "red";
                     result.textContent = "❌ Este email já está cadastrado!";
@@ -353,7 +340,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                // 3. Criar novo usuário
+                // Criar novo usuário
                 const novoUsuario = {
                     email: gmail,
                     password: pass_word,
@@ -362,34 +349,34 @@ document.addEventListener('DOMContentLoaded', function() {
                     createdAt: new Date().toISOString()
                 };
 
-                // 4. Adicionar à lista
+                // Adicionar à lista
                 usuarios.push(novoUsuario);
 
-                // 5. SALVAR NO LOCALSTORAGE
+                // 🔴 SALVAR NO LOCALSTORAGE
                 localStorage.setItem('usuarios', JSON.stringify(usuarios));
 
-                // 6. LOG PARA VERIFICAR
-                console.log("✅ USUÁRIO SALVO COM SUCESSO!");
-                console.log("📋 Dados salvos:", novoUsuario);
+                // Mostrar no console
+                console.log("✅ USUÁRIO SALVO NO LOCALSTORAGE!");
+                console.log("📋 Dados:", novoUsuario);
                 console.log("📊 Total de usuários agora:", usuarios.length);
-                console.log("👤 Todos os usuários:", usuarios.map(u => u.email));
+                console.log("👤 Todos os emails:", usuarios.map(u => u.email));
 
-                // 7. Mostrar sucesso
+                // Mostrar sucesso
                 result.style.color = "green";
                 result.textContent = "✅ Conta criada com sucesso!";
 
-                // 8. Redirecionar para login
+                // Redirecionar para login
                 setTimeout(() => {
                     window.location.href = "index.html";
                 }, 2000);
 
             } catch (error) {
-                console.error("❌ Erro ao salvar:", error);
+                console.error("❌ Erro:", error);
                 result.style.color = "red";
-                result.textContent = "❌ Erro ao criar conta. Tente novamente.";
+                result.textContent = "❌ Erro ao criar conta.";
                 isSubmitting = false;
             }
-        }, 1500); // Delay de 1.5 segundos
+        }, 1500);
     };
 
     // Adicionar evento de clique ao botão para executar reCAPTCHA
