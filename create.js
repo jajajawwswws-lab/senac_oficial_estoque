@@ -1,10 +1,12 @@
-// create_account.js - VERSÃO FINAL COM CORREÇÃO DO RECAPTCHA
-
-// DEFINIR A FUNÇÃO GLOBAL ONSUBMIT IMEDIATAMENTE (fora do DOMContentLoaded)
-window.onSubmit = function(token) {
+import { createClient } from "@supabase/supabase-js";
+// Criação do cliente Supabase
+const supabase = createClient(
+  'https://vercel_icfg_zw4SbRdBbh4Wc6N5T8IK5Ybk.supabase.co', 
+  'sb_publishable_LYvjTbiU5JDe6zYCWnPWVg_4Vkdf2q0'
+);
+/*async function login(email, password) { const { user, error } = await supabase.auth.signInWithPassword({ email: email, password: password, }); if (error) { console.error('Erro de login:', error.message); } else { console.log('Usuário logado:', user); } }*/
+window.onsubmit = function(token) {
     console.log("onSubmit called with token:", token);
-    // A implementação será sobrescrita dentro do DOMContentLoaded
-    // mas isso garante que a função existe quando o reCAPTCHA carregar
 };
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -97,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSubmitButton();
     });
     
-    // Formatação e validação de telefone
+    // Validação de telefone
     phoneInput.addEventListener('input', function() {
         clearFieldError(this);
         
@@ -198,6 +200,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Cálculo da força da senha
     function calculatePasswordStrength(password) {
         if (!password) return 0;
         
@@ -217,6 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return Math.min(Math.max(Math.floor(score / 2) + 1, 1), 5);
     }
 
+    // Atualiza o indicador de força da senha
     function updatePasswordStrengthIndicator(strength) {
         if (!strengthBar || !strengthText) return;
         
@@ -232,6 +236,7 @@ document.addEventListener('DOMContentLoaded', function() {
         strengthText.style.color = colors[index];
     }
 
+    // Exibe mensagens de erro para o campo
     function showFieldError(inputElement, message) {
         clearFieldError(inputElement);
         
@@ -253,6 +258,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Atualiza o botão de submissão
     function updateSubmitButton() {
         const allValid = isFormValid.username && 
                         isFormValid.email && 
@@ -295,7 +301,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Variável de controle para evitar múltiplos envios
     let isSubmitting = false;
 
-    // SOBRESCREVER a função global onSubmit com a implementação real
+    // Função que será chamada no submit
     window.onSubmit = function(token) {
         // Prevenir múltiplos envios
         if(isSubmitting) {
@@ -327,49 +333,38 @@ document.addEventListener('DOMContentLoaded', function() {
         result.style.color = "black";
         result.textContent = "🔄 Verificando conta...";
 
-        // Fazer requisição para a API
-        fetch('/api/crtback', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email: gmail,
-                password: pass_word,
-                confirm_password: require_pass_word,
-                recaptchaToken: token
-            })
-        })
-        .then(async response => {
-            if (!response.ok) {
-                const data = await response.json().catch(() => ({}));
-                throw new Error(data.error || `Erro HTTP: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log("Resposta do backend:", data);
-
-            if (data.success) {
+        // Criar conta com Supabase
+        supabase.auth.signUp({
+            email: gmail,
+            password: pass_word
+        }).then(({ user, error }) => {
+            if (error) {
+                result.style.color = "red";
+                result.textContent = "❌ Erro ao criar conta: " + error.message;
+                isSubmitting = false;
+            } else {
                 result.style.color = "green";
                 result.textContent = "✅ Conta criada com sucesso!";
 
-                // Redirecionar após 1 segundo
-                setTimeout(() => {
-                    window.location.href = "index.html";
-                }, 1000);
-            } else {
-                result.style.color = "red";
-                result.textContent = data.error || "Erro ao criar conta!";
-                isSubmitting = false;
+                // Fazer login após o cadastro
+                supabase.auth.signInWithPassword({
+                    email: gmail,
+                    password: pass_word
+                }).then(({ user, error }) => {
+                    if (error) {
+                        result.style.color = "red";
+                        result.textContent = "❌ Erro de login: " + error.message;
+                    } else {
+                        console.log("Usuário logado:", user);
+                        // Redirecionar após 1 segundo
+                        setTimeout(() => {
+                            window.location.href = "index.html";
+                        }, 1000);
+                    }
+                });
             }
-        })
-        .catch(error => {
-            console.error("Erro:", error);
-            result.style.color = "red";
-            result.textContent = "❌ Erro de conexão com o servidor.";
-            isSubmitting = false;
         });
+
     };
 
     // Adicionar evento de clique ao botão para executar reCAPTCHA
