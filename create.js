@@ -1,4 +1,4 @@
-// create_account.js - VERSÃO LIMPA (SEM LOGS EXCESSIVOS)
+// create_account.js - VERSÃO FINAL COMPLETA
 
 document.addEventListener('DOMContentLoaded', function() {
     // Elementos do DOM
@@ -16,8 +16,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const passwordMatchMessage = document.getElementById('passwordMatchMessage');
     const submitButton = document.getElementById('submitButton');
     const result = document.getElementById('result');
-    // 🔑 CHAVE CORRETA DO SITE
-   // const RECAPTCHA_SITE_KEY = '6LeJZ28sAAAAAMgcIEAe0vm2GHIKZUZRucVyeiYU';
 
     // Validação em tempo real
     let isFormValid = {
@@ -58,8 +56,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const username = this.value.trim();
         const pattern = /^[a-zA-Z0-9_]+$/;
         
-        if (username.length < 5) {
-            showFieldError(this, 'Username must be at least 5 characters');
+        if (username.length < 3) {
+            showFieldError(this, 'Username must be at least 3 characters');
             isFormValid.username = false;
         } else if (username.length > 30) {
             showFieldError(this, 'Username cannot exceed 30 characters');
@@ -92,6 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSubmitButton();
     });
     
+    // Formatação e validação de telefone
     phoneInput.addEventListener('input', function() {
         clearFieldError(this);
         
@@ -115,16 +114,20 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const digitCount = phoneDigits.length;
         
+        // Validar DDDs brasileiros válidos
         if (digitCount >= 10) {
-            const regex_phone = /^\((68|82|96|92|97|71|73|74|75|77|85|88|61|27|28|62|64|98|99|65|66|67|31|32|33|34|35|37|38|91|93|94|83|41|42|43|44|45|46|81|87|86|89|21|22|24|84|51|53|54|55|69|95|47|48|49|11|12|13|14|15|16|17|18|19|79|63)\)\s?\d{4,5}-\d{4}$/;
+            const regex_phone = /^\((11|12|13|14|15|16|17|18|19|21|22|24|27|28|31|32|33|34|35|37|38|41|42|43|44|45|46|47|48|49|51|53|54|55|61|62|63|64|65|66|67|68|69|71|73|74|75|77|79|81|82|83|84|85|86|87|88|89|91|92|93|94|95|96|97|98|99)\)\s?\d{4,5}-\d{4}$/;
             
             if (!regex_phone.test(this.value)) {
-                showFieldError(this, 'Please use format: (DDD) 99999-9999');
+                showFieldError(this, 'Please use a valid Brazilian phone number');
                 isFormValid.phone = false;
             } else {
                 isFormValid.phone = true;
             }
         } else {
+            if (digitCount > 0) {
+                showFieldError(this, 'Phone number must have at least 10 digits');
+            }
             isFormValid.phone = false;
         }
         
@@ -193,14 +196,18 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let score = 0;
         
+        // Comprimento
         if (password.length >= 8) score += 1;
         if (password.length >= 12) score += 1;
-        if (/[a-z]/.test(password)) score += 1;
-        if (/[A-Z]/.test(password)) score += 1;
-        if (/[0-9]/.test(password)) score += 1;
-        if (/[^a-zA-Z0-9]/.test(password)) score += 1;
         
-        return Math.min(Math.max(score, 1), 5);
+        // Complexidade
+        if (/[a-z]/.test(password)) score += 1; // letras minúsculas
+        if (/[A-Z]/.test(password)) score += 1; // letras maiúsculas
+        if (/[0-9]/.test(password)) score += 1; // números
+        if (/[^a-zA-Z0-9]/.test(password)) score += 1; // caracteres especiais
+        
+        // Ajustar para escala de 1-5
+        return Math.min(Math.max(Math.floor(score / 2) + 1, 1), 5);
     }
 
     function updatePasswordStrengthIndicator(strength) {
@@ -248,45 +255,72 @@ document.addEventListener('DOMContentLoaded', function() {
         submitButton.disabled = !allValid;
         
         if (allValid) {
-            submitButton.classList.add('bg-orange-400', 'hover:bg-orange-500', 'cursor-pointer');
-            submitButton.classList.remove('bg-gray-300', 'cursor-not-allowed');
+            submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
             submitButton.style.backgroundColor = '#FAA628';
+            submitButton.style.cursor = 'pointer';
         } else {
-            submitButton.classList.add('bg-gray-300', 'cursor-not-allowed');
-            submitButton.classList.remove('bg-orange-400', 'hover:bg-orange-500', 'cursor-pointer');
+            submitButton.classList.add('opacity-50', 'cursor-not-allowed');
             submitButton.style.backgroundColor = '#D1D5DB';
+            submitButton.style.cursor = 'not-allowed';
         }
     }
 
-    // ENVIO DO FORMULÁRIO
+    // Função de validação de campos
+    function validarCampos(email, password, confirmPassword) {
+        if (!email || !password || !confirmPassword) {
+            if (result) {
+                result.style.color = "red";
+                result.textContent = "❌ Todos os campos são obrigatórios!";
+            }
+            return false;
+        }
+        if (password !== confirmPassword) {
+            if (result) {
+                result.style.color = "red";
+                result.textContent = "❌ As senhas não coincidem!";
+            }
+            return false;
+        }
+        return true;
+    }
+
+    // Variável de controle para evitar múltiplos envios
     let isSubmitting = false;
-    window.onsubmit = function(token)
-    {
-        if(isSubmitting)
-        {
-            console.log("submission already in the progress .. . ");
+
+    // FUNÇÃO GLOBAL onSubmit para o reCAPTCHA
+    window.onSubmit = function(token) {
+        // Prevenir múltiplos envios
+        if(isSubmitting) {
+            console.log("Submissão já em andamento...");
             return;
         }
-        if(!emailInput || !passwordInput || !confirmPasswordInput || !result)
-        {
-            console.error('Required form elements not found');
-            alert('Erro ao carregar o formulário. Sistema nao encontrou ou nao validou elementos.');
+
+        // Validar elementos necessários
+        if(!emailInput || !passwordInput || !confirmPasswordInput || !result) {
+            console.error('Elementos do formulário não encontrados');
+            alert('Erro ao carregar o formulário. Elementos não encontrados.');
             return;
         }
+
+        // Obter valores
         const gmail = emailInput.value.trim();
         const pass_word = passwordInput.value.trim();
         const require_pass_word = confirmPasswordInput.value.trim();
-        if(!validarCampos(gmail,pass_word,require_pass_word))
-            {
-                console.log("teste de return sucess");
-                return;
-            }
-        isSubmitting = true;
-        result.style.color = "black"; 
 
+        // Validar campos
+        if(!validarCampos(gmail, pass_word, require_pass_word)) {
+            return;
+        }
+
+        // Marcar como enviando
+        isSubmitting = true;
+        
+        // Mostrar mensagem de carregamento
+        result.style.color = "black";
         result.textContent = "🔄 Verificando conta...";
-        fetch('/api/crtback.ts',{
-            
+
+        // Fazer requisição para a API
+        fetch('/api/crtback', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -300,54 +334,50 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(async response => {
             if (!response.ok) {
-                const data = await response.json();
+                const data = await response.json().catch(() => ({}));
                 throw new Error(data.error || `Erro HTTP: ${response.status}`);
             }
             return response.json();
         })
+        .then(data => {
+            console.log("Resposta do backend:", data);
 
-    .then(data => {
-        console.log("Resposta do backend:", data);
+            if (data.success) {
+                result.style.color = "green";
+                result.textContent = "✅ Conta criada com sucesso!";
 
-        if (data.success) {
-            result.style.color = "green";
-            result.textContent = "✅ Login realizado com sucesso!";
-
-            // Redirect after 1 second
-            setTimeout(() => {
-                window.location.href = "index.html";
-            }, 1000);
-        } else {
+                // Redirecionar após 1 segundo
+                setTimeout(() => {
+                    window.location.href = "index.html";
+                }, 1000);
+            } else {
+                result.style.color = "red";
+                result.textContent = data.error || "Erro ao criar conta!";
+                isSubmitting = false; // Resetar flag em caso de erro
+            }
+        })
+        .catch(error => {
+            console.error("Erro:", error);
             result.style.color = "red";
-            result.textContent = data.error || "E-mail ou senha incorretos!";
-            isSubmitting = false; // Reset flag on failure
-        }
-    })
-    .catch(error => {
-        console.error("Erro:", error);
-        result.style.color = "red";
-        result.textContent = "❌ Erro de conexão com o servidor.";
-        isSubmitting = false; // Reset flag on error
-    });
+            result.textContent = "❌ Erro de conexão com o servidor.";
+            isSubmitting = false; // Resetar flag em caso de erro
+        });
+    };
+
+    // Prevenir submissão padrão do formulário
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            // O reCAPTCHA chamará automaticamente a função onSubmit
+        });
     }
-    // Validação inicial silenciosa
+
+    // Validação inicial silenciosa após carregar a página
     setTimeout(() => {
         usernameInput.dispatchEvent(new Event('input'));
         emailInput.dispatchEvent(new Event('input'));
+        phoneInput.dispatchEvent(new Event('input'));
         passwordInput.dispatchEvent(new Event('input'));
         confirmPasswordInput.dispatchEvent(new Event('input'));
     }, 100);
-    
-});
-
-document.addEventListener('DOMContentLoaded', function() {
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.addEventListener('submit', function(event) {
-            event.preventDefault();
-            // The reCAPTCHA will call onSubmit automatically
-        });
-    } else {
-        console.error('Login form not found');
-    }
 });
