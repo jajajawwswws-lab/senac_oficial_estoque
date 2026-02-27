@@ -1,38 +1,58 @@
 // ===============================
-// LOGIN COM LOCALSTORAGE - VERSÃO CORRIGIDA
+// LOGIN COM LOCALSTORAGE - VERSÃO COM DEBUG
 // ===============================
 
 // Verificar se já está logado
-const sessao = JSON.parse(localStorage.getItem('sessao'));
-if (sessao && sessao.email) {
-    window.location.href = "account.html";
+try {
+    const sessao = JSON.parse(localStorage.getItem('sessao'));
+    if (sessao && sessao.email) {
+        console.log("✅ Já logado como:", sessao.email);
+        window.location.href = "account.html";
+    }
+} catch (e) {
+    console.log("Nenhuma sessão ativa");
 }
 
-// Variável de controle
 let isSubmitting = false;
 
-// Função do reCAPTCHA
 window.onSubmit = function(token) {
     console.log("🔑 Tentativa de login...");
+    console.log("Token reCAPTCHA:", token ? "✅ OK" : "❌ Ausente");
 
-    if (isSubmitting) return;
+    if (isSubmitting) {
+        console.log("⏳ Já processando...");
+        return;
+    }
 
+    // Pegar elementos
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
-    const resultadoDiv = document.getElementById('result'); // ID CORRIGO: 'result'
+    const resultadoDiv = document.getElementById('result');
 
-    // Limpar mensagens anteriores
-    if (resultadoDiv) {
-        resultadoDiv.textContent = '';
-        resultadoDiv.style.color = '';
+    // DEBUG: Verificar elementos
+    console.log("📋 Elementos do formulário:");
+    console.log("- Email input:", emailInput ? "✅" : "❌");
+    console.log("- Password input:", passwordInput ? "✅" : "❌");
+    console.log("- Result div:", resultadoDiv ? "✅" : "❌");
+
+    if (!emailInput || !passwordInput || !resultadoDiv) {
+        alert("Erro ao carregar formulário. Recarregue a página.");
+        return;
     }
-    emailInput?.classList.remove('border-red-500');
-    passwordInput?.classList.remove('border-red-500');
 
-    const email = emailInput?.value.trim();
-    const password = passwordInput?.value;
+    // Limpar mensagens
+    resultadoDiv.textContent = '';
+    resultadoDiv.style.color = '';
+    emailInput.classList.remove('border-red-500');
+    passwordInput.classList.remove('border-red-500');
 
-    // Validações básicas
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+
+    console.log("📝 Dados do formulário:");
+    console.log("- Email digitado:", email);
+    console.log("- Senha digitada:", password ? "******" : "❌ VAZIA");
+
     if (!email || !password) {
         alert("Preencha todos os campos!");
         if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
@@ -40,99 +60,105 @@ window.onSubmit = function(token) {
     }
 
     isSubmitting = true;
-    if (resultadoDiv) resultadoDiv.textContent = "🔄 Verificando...";
+    resultadoDiv.textContent = "🔄 Verificando...";
 
-    // Simular delay de rede
     setTimeout(() => {
         try {
-            // 1. Buscar usuários do LocalStorage
+            // Buscar usuários do LocalStorage
             const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
-            console.log("📋 Usuários cadastrados:", usuarios);
+            
+            console.log("📊 TOTAL DE USUÁRIOS NO SISTEMA:", usuarios.length);
+            console.log("📋 LISTA COMPLETA DE EMAILS CADASTRADOS:");
+            usuarios.forEach((u, i) => {
+                console.log(`   ${i+1}. "${u.email}"`);
+            });
 
-            // 2. Procurar pelo email
-            const usuario = usuarios.find(u => u.email === email);
+            // Procurar email (ignorando maiúsculas/minúsculas)
+            const usuario = usuarios.find(u => 
+                u.email.toLowerCase().trim() === email.toLowerCase().trim()
+            );
 
-            // 3. Validações
+            console.log("🔍 RESULTADO DA BUSCA:");
+            if (usuario) {
+                console.log("   ✅ Email ENCONTRADO!");
+                console.log("   - Username:", usuario.username);
+                console.log("   - Senha no sistema:", usuario.password);
+                console.log("   - Senha fornecida:", password);
+            } else {
+                console.log("   ❌ Email NÃO ENCONTRADO na lista acima");
+            }
+
             if (!usuario) {
-                console.log("❌ Email não encontrado");
-                if (resultadoDiv) {
-                    resultadoDiv.style.color = 'red';
-                    resultadoDiv.textContent = "❌ E-mail não cadastrado!";
-                }
-                emailInput?.classList.add('border-red-500');
+                resultadoDiv.style.color = 'red';
+                resultadoDiv.textContent = "❌ E-mail não cadastrado!";
+                emailInput.classList.add('border-red-500');
                 isSubmitting = false;
                 if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
                 return;
             }
 
             if (usuario.password !== password) {
-                console.log("❌ Senha incorreta");
-                if (resultadoDiv) {
-                    resultadoDiv.style.color = 'red';
-                    resultadoDiv.textContent = "❌ Senha incorreta!";
-                }
-                passwordInput?.classList.add('border-red-500');
+                console.log("❌ SENHA INCORRETA");
+                console.log("   - Esperada:", usuario.password);
+                console.log("   - Recebida:", password);
+                
+                resultadoDiv.style.color = 'red';
+                resultadoDiv.textContent = "❌ Senha incorreta!";
+                passwordInput.classList.add('border-red-500');
                 isSubmitting = false;
                 if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
                 return;
             }
 
-            // 4. SUCESSO!
-            console.log("✅ Login bem-sucedido:", email);
-            if (resultadoDiv) {
-                resultadoDiv.style.color = 'green';
-                resultadoDiv.textContent = "✅ Login realizado! Redirecionando...";
-            }
+            // SUCESSO!
+            console.log("🎉 LOGIN BEM-SUCEDIDO!");
+            resultadoDiv.style.color = 'green';
+            resultadoDiv.textContent = "✅ Login realizado! Redirecionando...";
 
-            // Salvar sessão
             localStorage.setItem('sessao', JSON.stringify({
                 email: usuario.email,
                 username: usuario.username,
                 loginTime: new Date().toISOString()
             }));
 
-            // Redirecionar
             setTimeout(() => {
                 window.location.href = "account.html";
             }, 1500);
 
         } catch (error) {
-            console.error("❌ Erro no login:", error);
-            if (resultadoDiv) {
-                resultadoDiv.style.color = 'red';
-                resultadoDiv.textContent = "❌ Erro interno. Tente novamente.";
-            }
+            console.error("❌ ERRO GRAVE:", error);
+            resultadoDiv.style.color = 'red';
+            resultadoDiv.textContent = "❌ Erro interno. Tente novamente.";
             isSubmitting = false;
             if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
         }
-    }, 800); // Delay de 800ms
+    }, 800);
 };
 
-// Inicialização quando a página carrega
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("📄 Página de login carregada");
-
-    // Mostrar usuários salvos para debug (opcional)
+    console.log("📄 PÁGINA DE LOGIN CARREGADA");
+    
+    // MOSTRAR STATUS ATUAL
     const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
-    console.log("Usuários disponíveis para login:", usuarios.map(u => u.email));
+    console.log("📊 USUÁRIOS DISPONÍVEIS AGORA:", usuarios.length);
+    console.log("📋 EMAIS CADASTRADOS:", usuarios.map(u => u.email));
 
     const loginForm = document.getElementById('loginForm');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
-    const resultadoDiv = document.getElementById('result'); // ID CORRIGO
+    const resultadoDiv = document.getElementById('result');
 
-    // Evento do formulário (acionado pelo botão g-recaptcha)
     if (loginForm) {
         loginForm.addEventListener('submit', (e) => e.preventDefault());
     }
 
-    // Limpar mensagens de erro ao digitar
     if (emailInput) {
         emailInput.addEventListener('input', () => {
             emailInput.classList.remove('border-red-500');
             if (resultadoDiv) resultadoDiv.textContent = '';
         });
     }
+    
     if (passwordInput) {
         passwordInput.addEventListener('input', () => {
             passwordInput.classList.remove('border-red-500');
