@@ -79,7 +79,7 @@ async function ServerRequest(
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
                 body: new URLSearchParams({
-                    secret: '6LeJZ28sAAAAAO3iQx4CXaN7xAvZNw2fnaacmCYE', // ⚠ coloque sua secret key real
+                    secret: '6LctSXksAAAAALmMFlvRvFJ9o1D2gUqt_lbvOVUg', // ⚠ coloque sua secret key real
                    //altere depois para esconder
                     response: recaptchaToken
                 })
