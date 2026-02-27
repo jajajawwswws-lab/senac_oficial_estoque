@@ -103,18 +103,23 @@ async function ServerRequest(
         // 🔴 Validação extra para reCAPTCHA v3 (score)
         console.log("reCAPTCHA válido ✔");
 
-        // 🔹 Validação de login (exemplo fixo)
-        if (
-            email !== "senac@gmail.com" ||
-            password !== "senacoficialmnbvcxz321#@!"
-        ) {
-            response.statusCode = 401;
+        // 🔹 Validação de login (exemp// 🔹 Validação dinâmica: apenas verifica se foi preenchido
+        if (!email || !password) {
+            response.statusCode = 400;
             response.end(JSON.stringify({
-                success: false,
-                error: "Credenciais inválidas"
-            }));
-            return;
-        }
+            success: false,
+            error: "Por favor, preencha email e senha"
+        }));
+        return;
+    }
+
+// ✅ Sucesso: qualquer email e senha preencheu
+        response.statusCode = 200;
+        response.end(JSON.stringify({
+        success: true,
+        message: "Login realizado com sucesso!",
+        data: { email }
+    }));
 
         // ✅ Sucesso
         response.statusCode = 200;
