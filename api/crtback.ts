@@ -1,9 +1,34 @@
 import { IncomingMessage, ServerResponse } from "node:http";
 
-// Interface do corpo esperado
-interface LoginRequest {
+// ====================================================
+// ARRAY EM MEMÓRIA PARA ARMAZENAR OS USUÁRIOS
+// ====================================================
+// Mesma interface do backend.ts
+interface User {
+    email: string;
+    password: string; // Em produção, isso deveria ser hash!
+    username?: string;
+    phone?: string;
+    createdAt: Date;
+}
+
+// Array global de usuários (compartilhado entre os endpoints)
+declare global {
+    var users: User[];
+}
+
+// Inicializar o array se não existir
+if (!global.users) {
+    global.users = [];
+}
+
+// Interface do corpo esperado (agora com campos de registro)
+interface RegisterRequest {
     email: string;
     password: string;
+    confirm_password: string;
+    username: string;
+    phone: string;
     recaptchaToken: string;
 }
 
@@ -25,8 +50,8 @@ async function ServerRequest(
         return;
     }
 
-    // Apenas POST
-    if (request.method !== 'POST' && request.method !== 'GET') {
+    // Apenas POST (removido GET)
+    if (request.method !== 'POST') {
         response.statusCode = 405;
         response.end(JSON.stringify({
             success: false,
@@ -45,27 +70,53 @@ async function ServerRequest(
             });
 
             request.on('end', () => resolve());
-
             request.on('error', err => reject(err));
         });
 
         // 🔹 Parse JSON
-        const data: LoginRequest = JSON.parse(body);
+        const data: RegisterRequest = JSON.parse(body);
 
-        const { email, password, recaptchaToken } = data;
+        const { email, password, confirm_password, username, phone, recaptchaToken } = data;
 
-        console.log("Body recebido:", {
+        console.log("📝 Body recebido (registro):", {
             email,
+            username,
+            phone,
             password: password ? "[PRESENT]" : "[MISSING]",
+            confirm_password: confirm_password ? "[PRESENT]" : "[MISSING]",
             token: recaptchaToken ? "[PRESENT]" : "[MISSING]"
         });
 
         // 🔹 Validar campos obrigatórios
-        if (!email || !password || !recaptchaToken) {
+        if (!email || !password || !confirm_password || !recaptchaToken) {
             response.statusCode = 400;
             response.end(JSON.stringify({
                 success: false,
-                error: 'Campos obrigatórios não preenchidos'
+                error: 'Campos obrigatórios não preenchidos',
+                field: !email ? 'email' : !password ? 'password' : !confirm_password ? 'confirm_password' : 'recaptcha'
+            }));
+            return;
+        }
+
+        // 🔹 Validar se as senhas conferem
+        if (password !== confirm_password) {
+            response.statusCode = 400;
+            response.end(JSON.stringify({
+                success: false,
+                error: 'As senhas não conferem',
+                field: 'confirm_password'
+            }));
+            return;
+        }
+
+        // 🔹 Validar se email já está cadastrado
+        const usuarioExistente = global.users.find(u => u.email === email);
+        if (usuarioExistente) {
+            response.statusCode = 409; // Conflict
+            response.end(JSON.stringify({
+                success: false,
+                error: 'Este email já está cadastrado',
+                field: 'email'
             }));
             return;
         }
@@ -80,7 +131,6 @@ async function ServerRequest(
                 },
                 body: new URLSearchParams({
                     secret: '6LctSXksAAAAALmMFlvRvFJ9o1D2gUqt_lbvOVUg', // ⚠ coloque sua secret key real
-                   //altere depois para esconder
                     response: recaptchaToken
                 })
             }
@@ -88,49 +138,54 @@ async function ServerRequest(
 
         const verifyDataAPI = await verifyAPI.json();
 
-        console.log("Resposta Google:", verifyDataAPI);
+        console.log("🤖 Resposta Google reCAPTCHA:", verifyDataAPI);
 
-        // 🔴 Verifica sucesso
+        // 🔴 Verifica sucesso do reCAPTCHA
         if (!verifyDataAPI) {
             response.statusCode = 400;
             response.end(JSON.stringify({
                 success: false,
-                error: 'reCAPTCHA inválido'
+                error: 'reCAPTCHA inválido',
+                field: 'recaptcha'
             }));
             return;
         }
 
-        // 🔴 Validação extra para reCAPTCHA v3 (score)
-        console.log("reCAPTCHA válido ✔");
+        // Verificar score do reCAPTCHA (opcional, mas recomendado)
 
-        if (!email || !password) {
-            response.statusCode = 400;
-            response.end(JSON.stringify({
-            success: false,
-            error: "Por favor, preencha email e senha"
-        }));
-        return;
-    }
+        console.log("✅ reCAPTCHA válido ✔");
 
-// ✅ Sucesso: qualquer email e senha preencheu
-    response.statusCode = 200;
-    response.end(JSON.stringify({
-        success: true,
-        message: "Login realizado com sucesso!",
-        data: { email }
-    }));
+        // ====================================================
+        // CRIAR O USUÁRIO E SALVAR NO ARRAY GLOBAL
+        // ====================================================
+        const novoUsuario: User = {
+            email: email,
+            password: password, // ⚠️ Idealmente hasheado!
+            username: username || '',
+            phone: phone || '',
+            createdAt: new Date()
+        };
 
-        // ✅ Sucesso
+        // Adicionar ao array global (mesmo usado no backend.ts)
+        global.users.push(novoUsuario);
+
+        console.log(`✅ USUÁRIO CRIADO COM SUCESSO: ${email}`);
+        console.log(`📋 Total de usuários cadastrados: ${global.users.length}`);
+        console.log('📋 Usuários:', global.users.map(u => u.email));
+
+        // ✅ Sucesso - Retornar resposta positiva
         response.statusCode = 200;
         response.end(JSON.stringify({
             success: true,
-            message: "Login realizado com sucesso!",
-            data: { email }
+            message: "Conta criada com sucesso!",
+            data: { 
+                email,
+                username
+            }
         }));
 
     } catch (error) {
-
-        console.error("Erro no backend:", error);
+        console.error("❌ Erro no backend (registro):", error);
 
         if (error instanceof SyntaxError) {
             response.statusCode = 400;
