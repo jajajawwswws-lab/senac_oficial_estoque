@@ -1,4 +1,11 @@
-// create_account.js - VERSÃO FINAL COMPLETA
+// create_account.js - VERSÃO FINAL COM CORREÇÃO DO RECAPTCHA
+
+// DEFINIR A FUNÇÃO GLOBAL ONSUBMIT IMEDIATAMENTE (fora do DOMContentLoaded)
+window.onSubmit = function(token) {
+    console.log("onSubmit called with token:", token);
+    // A implementação será sobrescrita dentro do DOMContentLoaded
+    // mas isso garante que a função existe quando o reCAPTCHA carregar
+};
 
 document.addEventListener('DOMContentLoaded', function() {
     // Elementos do DOM
@@ -201,10 +208,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (password.length >= 12) score += 1;
         
         // Complexidade
-        if (/[a-z]/.test(password)) score += 1; // letras minúsculas
-        if (/[A-Z]/.test(password)) score += 1; // letras maiúsculas
-        if (/[0-9]/.test(password)) score += 1; // números
-        if (/[^a-zA-Z0-9]/.test(password)) score += 1; // caracteres especiais
+        if (/[a-z]/.test(password)) score += 1;
+        if (/[A-Z]/.test(password)) score += 1;
+        if (/[0-9]/.test(password)) score += 1;
+        if (/[^a-zA-Z0-9]/.test(password)) score += 1;
         
         // Ajustar para escala de 1-5
         return Math.min(Math.max(Math.floor(score / 2) + 1, 1), 5);
@@ -249,6 +256,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateSubmitButton() {
         const allValid = isFormValid.username && 
                         isFormValid.email && 
+                        isFormValid.phone && // Incluir phone na validação
                         isFormValid.password && 
                         isFormValid.confirmPassword;
         
@@ -287,7 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Variável de controle para evitar múltiplos envios
     let isSubmitting = false;
 
-    // FUNÇÃO GLOBAL onSubmit para o reCAPTCHA
+    // SOBRESCREVER a função global onSubmit com a implementação real
     window.onSubmit = function(token) {
         // Prevenir múltiplos envios
         if(isSubmitting) {
@@ -353,22 +361,39 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 result.style.color = "red";
                 result.textContent = data.error || "Erro ao criar conta!";
-                isSubmitting = false; // Resetar flag em caso de erro
+                isSubmitting = false;
             }
         })
         .catch(error => {
             console.error("Erro:", error);
             result.style.color = "red";
             result.textContent = "❌ Erro de conexão com o servidor.";
-            isSubmitting = false; // Resetar flag em caso de erro
+            isSubmitting = false;
         });
     };
+
+    // Adicionar evento de clique ao botão para executar reCAPTCHA
+    submitButton.addEventListener('click', function(event) {
+        event.preventDefault();
+        
+        // Verificar se o botão está habilitado
+        if (submitButton.disabled) {
+            return;
+        }
+        
+        // Executar reCAPTCHA
+        grecaptcha.ready(function() {
+            grecaptcha.execute('6LctSXksAAAAAM19sUp0Z0wRZ7nAMIxlLGe7EDgf', {action: 'submit'}).then(function(token) {
+                // Chamar nossa função onSubmit com o token
+                window.onSubmit(token);
+            });
+        });
+    });
 
     // Prevenir submissão padrão do formulário
     if (form) {
         form.addEventListener('submit', function(event) {
             event.preventDefault();
-            // O reCAPTCHA chamará automaticamente a função onSubmit
         });
     }
 
