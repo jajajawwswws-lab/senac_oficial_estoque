@@ -1,412 +1,342 @@
-// profile.js - Versão com backend API
+// profile.js - Funcionalidades de perfil com LocalStorage
 
-// ==================== ESTADO GLOBAL ====================
-let usuarioAtual = null;
-let token = null;
+// ==================== DADOS DO USUÁRIO ====================
+const usuarioPadrao = {
+    nome: "User Name",
+    email: "user@senacestoque.com",
+    telefone: "(11) 99999-9999",
+    departamento: "Tecnologia da Informação",
+    cargo: "Administrador do Sistema",
+    avatar: "https://ui-avatars.com/api/?name=User+Name&background=1e3a8a&color=fff&size=128",
+    dataCadastro: "Jan/2023",
+    estatisticas: {
+        itensGerenciados: 150,
+        itensAdicionados: 142,
+        manutencoesSolicitadas: 8,
+        relatoriosGerados: 24
+    },
+    configuracoes: {
+        notificacoesEmail: true,
+        autenticacaoDoisFatores: false,
+        modoEscuro: false
+    },
+    atividades: [
+        {
+            acao: "Adicionou novo item ao estoque",
+            descricao: "Monitor Dell 24\" foi adicionado ao estoque",
+            data: "Hoje, 10:30 AM",
+            icone: "fa-box-open"
+        },
+        {
+            acao: "Solicitou manutenção",
+            descricao: "Teclado Mecânico enviado para manutenção",
+            data: "Ontem, 03:15 PM",
+            icone: "fa-tools"
+        },
+        {
+            acao: "Exportou relatório mensal",
+            descricao: "Relatório de estoque - Novembro 2023",
+            data: "2 dias atrás",
+            icone: "fa-file-export"
+        },
+        {
+            acao: "Atualizou status de item",
+            descricao: "Notebook Dell marcado como \"Em Uso\"",
+            data: "3 dias atrás",
+            icone: "fa-check-circle"
+        }
+    ]
+};
 
 // ==================== INICIALIZAÇÃO ====================
 document.addEventListener('DOMContentLoaded', function() {
     console.log("📄 Página de perfil carregada");
     
-    // Verificar se está logado
-    verificarLogin();
+    // Inicializar dados do usuário se não existirem
+    inicializarDadosUsuario();
+    
+    // Carregar dados do usuário na interface
+    carregarDadosUsuario();
+    
+    // Carregar estatísticas
+    carregarEstatisticas();
+    
+    // Carregar atividades recentes
+    carregarAtividades();
+    
+    // Carregar configurações
+    carregarConfiguracoes();
+    
+    // Configurar eventos
+    configurarEventos();
 });
 
-// ==================== VERIFICAR LOGIN ====================
-async function verificarLogin() {
-    // Tentar recuperar token do localStorage
-    token = localStorage.getItem('auth_token');
-    
-    if (!token) {
-        // Se não estiver logado, redirecionar para login
-        window.location.href = 'index.html';
-        return;
+// ==================== INICIALIZAR DADOS ====================
+function inicializarDadosUsuario() {
+    if (!localStorage.getItem('usuario')) {
+        localStorage.setItem('usuario', JSON.stringify(usuarioPadrao));
+        console.log("✅ Dados de usuário inicializados no localStorage");
     }
     
-    // Carregar dados do perfil
-    await carregarDadosPerfil();
+    if (!localStorage.getItem('usuario_configuracoes')) {
+        localStorage.setItem('usuario_configuracoes', JSON.stringify(usuarioPadrao.configuracoes));
+    }
 }
 
 // ==================== CARREGAR DADOS ====================
-async function carregarDadosPerfil() {
-    try {
-        mostrarLoading(true);
-        
-        // Buscar dados do perfil
-        const response = await fetch('/api/profile-api');
-        const result = await response.json();
-        
-        if (result.success) {
-            usuarioAtual = result.data;
-            
-            // Atualizar interface
-            atualizarInterface();
-            
-            // Carregar atividades
-            await carregarAtividades();
-            
-            console.log("✅ Dados carregados:", usuarioAtual);
-        } else {
-            showNotification('Erro ao carregar perfil', 'error');
-        }
-    } catch (error) {
-        console.error('Erro:', error);
-        showNotification('Erro de conexão com o servidor', 'error');
-    } finally {
-        mostrarLoading(false);
-    }
-}
-
-// ==================== ATUALIZAR INTERFACE ====================
-function atualizarInterface() {
-    if (!usuarioAtual) return;
+function carregarDadosUsuario() {
+    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
     
-    // Nome
-    document.querySelector('h2.text-2xl').textContent = usuarioAtual.nome;
+    // Atualizar nome
+    document.querySelector('h2.text-2xl')?.textContent = usuario.nome || 'User Name';
     
-    // Cargo
-    document.querySelector('.text-gray-600.mb-2').textContent = usuarioAtual.cargo;
+    // Atualizar cargo
+    document.querySelector('.text-gray-600.mb-2')?.textContent = usuario.cargo || 'Administrador do Sistema';
     
-    // Badge de data
-    const badges = document.querySelectorAll('.flex.flex-wrap .rounded-full');
-    badges.forEach(badge => {
+    // Atualizar badges
+    document.querySelectorAll('.flex.flex-wrap .rounded-full').forEach(badge => {
         if (badge.textContent.includes('Desde:')) {
-            badge.innerHTML = `<i class="fas fa-calendar-check mr-1"></i> Desde: ${usuarioAtual.dataCadastro}`;
+            badge.innerHTML = `<i class="fas fa-calendar-check mr-1"></i> Desde: ${usuario.dataCadastro || 'Jan/2023'}`;
         }
     });
     
-    // Avatar
+    // Atualizar avatar
     const avatarImg = document.querySelector('.profile-avatar img');
     if (avatarImg) {
-        avatarImg.src = usuarioAtual.avatar;
+        avatarImg.src = usuario.avatar || `https://ui-avatars.com/api/?name=${usuario.nome?.replace(' ', '+') || 'User+Name'}&background=1e3a8a&color=fff&size=128`;
     }
     
-    // Informações de contato
+    // Atualizar informações de contato
     const infoGrid = document.querySelectorAll('.grid-cols-1.md\\:grid-cols-3 .font-medium');
     if (infoGrid.length >= 3) {
-        infoGrid[0].textContent = usuarioAtual.email;
-        infoGrid[1].textContent = usuarioAtual.telefone;
-        infoGrid[2].textContent = usuarioAtual.departamento;
+        infoGrid[0].textContent = usuario.email || 'user@senacestoque.com';
+        infoGrid[1].textContent = usuario.telefone || '(11) 99999-9999';
+        infoGrid[2].textContent = usuario.departamento || 'Tecnologia da Informação';
     }
+}
+
+// ==================== CARREGAR ESTATÍSTICAS ====================
+function carregarEstatisticas() {
+    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+    const stats = usuario.estatisticas || usuarioPadrao.estatisticas;
     
-    // Estatísticas
     const statBoxes = document.querySelectorAll('.bg-blue-50, .bg-green-50, .bg-orange-50, .bg-purple-50');
-    if (statBoxes.length >= 4) {
-        statBoxes[0].querySelector('.text-2xl').textContent = usuarioAtual.estatisticas.itensGerenciados;
-        statBoxes[1].querySelector('.text-2xl').textContent = usuarioAtual.estatisticas.itensAdicionados;
-        statBoxes[2].querySelector('.text-2xl').textContent = usuarioAtual.estatisticas.manutencoesSolicitadas;
-        statBoxes[3].querySelector('.text-2xl').textContent = usuarioAtual.estatisticas.relatoriosGerados;
-    }
     
-    // Configurações
-    const switches = document.querySelectorAll('.switch input[type="checkbox"]');
-    if (switches.length >= 3) {
-        switches[0].checked = usuarioAtual.configuracoes.notificacoesEmail;
-        switches[1].checked = usuarioAtual.configuracoes.autenticacaoDoisFatores;
-        switches[2].checked = usuarioAtual.configuracoes.modoEscuro;
+    if (statBoxes.length >= 4) {
+        // Itens Gerenciados
+        statBoxes[0].querySelector('.text-2xl').textContent = stats.itensGerenciados || 150;
+        // Itens Adicionados
+        statBoxes[1].querySelector('.text-2xl').textContent = stats.itensAdicionados || 142;
+        // Manutenções Solicitadas
+        statBoxes[2].querySelector('.text-2xl').textContent = stats.manutencoesSolicitadas || 8;
+        // Relatórios Gerados
+        statBoxes[3].querySelector('.text-2xl').textContent = stats.relatoriosGerados || 24;
     }
 }
 
 // ==================== CARREGAR ATIVIDADES ====================
-async function carregarAtividades() {
-    try {
-        const response = await fetch('/api/profile/atividades');
-        const result = await response.json();
+function carregarAtividades() {
+    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+    const atividades = usuario.atividades || usuarioPadrao.atividades;
+    
+    const timeline = document.querySelector('.activity-timeline');
+    if (!timeline) return;
+    
+    timeline.innerHTML = '';
+    
+    atividades.forEach(atividade => {
+        const item = document.createElement('div');
+        item.className = 'activity-item';
+        item.innerHTML = `
+            <div class="activity-icon">
+                <i class="fas ${atividade.icone || 'fa-history'}"></i>
+            </div>
+            <div class="activity-content">
+                <p class="font-medium">${atividade.acao}</p>
+                <p class="text-sm text-gray-500">${atividade.descricao}</p>
+                <span class="text-xs text-gray-400">${atividade.data}</span>
+            </div>
+        `;
+        timeline.appendChild(item);
+    });
+}
+
+// ==================== CARREGAR CONFIGURAÇÕES ====================
+function carregarConfiguracoes() {
+    const configuracoes = JSON.parse(localStorage.getItem('usuario_configuracoes') || '{}');
+    
+    // Notificações por Email
+    const emailSwitch = document.querySelector('.switch input[type="checkbox"]');
+    if (emailSwitch) {
+        emailSwitch.checked = configuracoes.notificacoesEmail !== undefined ? 
+            configuracoes.notificacoesEmail : true;
+    }
+    
+    // Autenticação em Dois Fatores
+    const doisFatoresSwitches = document.querySelectorAll('.switch input[type="checkbox"]');
+    if (doisFatoresSwitches.length >= 2) {
+        doisFatoresSwitches[1].checked = configuracoes.autenticacaoDoisFatores || false;
+    }
+    
+    // Modo Escuro
+    if (doisFatoresSwitches.length >= 3) {
+        doisFatoresSwitches[2].checked = configuracoes.modoEscuro || false;
         
-        if (result.success) {
-            const timeline = document.querySelector('.activity-timeline');
-            if (!timeline) return;
-            
-            timeline.innerHTML = '';
-            
-            result.data.forEach(atividade => {
-                const item = document.createElement('div');
-                item.className = 'activity-item';
-                item.innerHTML = `
-                    <div class="activity-icon">
-                        <i class="fas ${atividade.icone}"></i>
-                    </div>
-                    <div class="activity-content">
-                        <p class="font-medium">${atividade.acao}</p>
-                        <p class="text-sm text-gray-500">${atividade.descricao}</p>
-                        <span class="text-xs text-gray-400">${atividade.data}</span>
-                    </div>
-                `;
-                timeline.appendChild(item);
-            });
+        // Aplicar modo escuro se estiver ativado
+        if (configuracoes.modoEscuro) {
+            document.body.classList.add('dark-mode');
         }
-    } catch (error) {
-        console.error('Erro ao carregar atividades:', error);
     }
 }
 
-// ==================== FUNÇÕES DE INTERAÇÃO ====================
-
-// Toggle sidebar
-window.toggleSidebar = function() {
-    const sidebar = document.querySelector('.sidebar');
-    sidebar.classList.toggle('collapsed');
+// ==================== SALVAR CONFIGURAÇÕES ====================
+function salvarConfiguracoes() {
+    const switches = document.querySelectorAll('.switch input[type="checkbox"]');
     
-    const chevron = document.querySelector('.fa-chevron-left, .fa-chevron-right');
-    if (chevron) {
-        if (sidebar.classList.contains('collapsed')) {
-            chevron.classList.remove('fa-chevron-left');
-            chevron.classList.add('fa-chevron-right');
-        } else {
-            chevron.classList.remove('fa-chevron-right');
-            chevron.classList.add('fa-chevron-left');
-        }
+    const configuracoes = {
+        notificacoesEmail: switches[0]?.checked || false,
+        autenticacaoDoisFatores: switches[1]?.checked || false,
+        modoEscuro: switches[2]?.checked || false
+    };
+    
+    localStorage.setItem('usuario_configuracoes', JSON.stringify(configuracoes));
+    
+    // Aplicar modo escuro
+    if (configuracoes.modoEscuro) {
+        document.body.classList.add('dark-mode');
+    } else {
+        document.body.classList.remove('dark-mode');
     }
-};
-
-// Upload de avatar
-document.querySelector('.edit-avatar-btn')?.addEventListener('click', function() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
     
-    input.onchange = async function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+    return configuracoes;
+}
+
+// ==================== CONFIGURAR EVENTOS ====================
+function configurarEventos() {
+    // Toggle sidebar
+    window.toggleSidebar = function() {
+        const sidebar = document.querySelector('.sidebar');
+        sidebar.classList.toggle('collapsed');
         
-        const reader = new FileReader();
-        reader.onload = async function(event) {
-            try {
-                mostrarLoading(true);
-                
-                const response = await fetch('/api/profile/avatar', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        avatar: event.target.result
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    document.querySelector('.profile-avatar img').src = event.target.result;
-                    showNotification('Foto de perfil atualizada!', 'success');
+        const chevron = document.querySelector('.fa-chevron-left, .fa-chevron-right');
+        if (chevron) {
+            if (sidebar.classList.contains('collapsed')) {
+                chevron.classList.remove('fa-chevron-left');
+                chevron.classList.add('fa-chevron-right');
+            } else {
+                chevron.classList.remove('fa-chevron-right');
+                chevron.classList.add('fa-chevron-left');
+            }
+        }
+    };
+
+    // Avatar upload
+    document.querySelector('.edit-avatar-btn')?.addEventListener('click', function() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        
+        input.onchange = function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const avatarImg = document.querySelector('.profile-avatar img');
+                    avatarImg.src = event.target.result;
                     
-                    // Registrar atividade
-                    await fetch('/api/profile/atividades', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({
-                            acao: "Avatar atualizado",
-                            descricao: "Foto de perfil alterada",
-                            icone: "fa-camera"
-                        })
-                    });
-                }
-            } catch (error) {
-                console.error('Erro:', error);
-                showNotification('Erro ao atualizar avatar', 'error');
-            } finally {
-                mostrarLoading(false);
+                    // Salvar avatar no localStorage
+                    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+                    usuario.avatar = event.target.result;
+                    localStorage.setItem('usuario', JSON.stringify(usuario));
+                    
+                    showNotification('Foto de perfil atualizada com sucesso!', 'success');
+                };
+                reader.readAsDataURL(file);
             }
         };
-        reader.readAsDataURL(file);
-    };
-    input.click();
-});
-
-// Toggle switches
-document.querySelectorAll('.switch input').forEach(switchEl => {
-    switchEl.addEventListener('change', async function() {
-        const container = this.closest('.flex');
-        const settingName = container?.querySelector('.font-medium')?.textContent || 'Configuração';
-        const isEnabled = this.checked;
-        
-        try {
-            const switches = document.querySelectorAll('.switch input[type="checkbox"]');
-            const response = await fetch('/api/profile/configuracoes', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    notificacoesEmail: switches[0]?.checked || false,
-                    autenticacaoDoisFatores: switches[1]?.checked || false,
-                    modoEscuro: switches[2]?.checked || false
-                })
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                showNotification(`${settingName} ${isEnabled ? 'ativado' : 'desativado'}`, 'success');
-            }
-        } catch (error) {
-            console.error('Erro:', error);
-            showNotification('Erro ao salvar configuração', 'error');
-            // Reverter o switch em caso de erro
-            this.checked = !isEnabled;
-        }
+        input.click();
     });
-});
 
-// Botão Editar Perfil
-document.querySelector('.bg-orange.text-white')?.addEventListener('click', async function() {
-    if (!usuarioAtual) return;
+    // Toggle switches
+    document.querySelectorAll('.switch input').forEach(switchEl => {
+        switchEl.addEventListener('change', function() {
+            const container = this.closest('.flex');
+            const settingName = container?.querySelector('.font-medium')?.textContent || 'Configuração';
+            const isEnabled = this.checked;
+            
+            // Salvar configurações
+            salvarConfiguracoes();
+            
+            showNotification(`${settingName} ${isEnabled ? 'ativado' : 'desativado'}`, 'info');
+        });
+    });
+
+    // Botão Editar Perfil
+    document.querySelector('.bg-orange.text-white')?.addEventListener('click', function() {
+        editarPerfil();
+    });
+
+    // Botão Salvar Preferências
+    document.querySelector('button.bg-darkblue')?.addEventListener('click', function() {
+        const button = this;
+        const originalText = button.textContent;
+        
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Salvando...';
+        button.disabled = true;
+        
+        setTimeout(() => {
+            salvarConfiguracoes();
+            showNotification('Preferências salvas com sucesso!', 'success');
+            button.textContent = originalText;
+            button.disabled = false;
+        }, 500);
+    });
     
-    const nome = prompt("Nome completo:", usuarioAtual.nome);
+    // Configurações de Privacidade
+    const privacyBtn = document.querySelector('.fa-user-shield')?.closest('button');
+    if (privacyBtn) {
+        privacyBtn.addEventListener('click', function() {
+            showNotification('Configurações de privacidade em desenvolvimento', 'info');
+        });
+    }
+}
+
+// ==================== FUNÇÃO DE EDIÇÃO DE PERFIL ====================
+function editarPerfil() {
+    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+    
+    const nome = prompt("Nome completo:", usuario.nome || "User Name");
     if (!nome) return;
     
-    const email = prompt("Email:", usuarioAtual.email);
+    const email = prompt("Email:", usuario.email || "user@senacestoque.com");
     if (!email) return;
     
-    const telefone = prompt("Telefone:", usuarioAtual.telefone);
+    const telefone = prompt("Telefone:", usuario.telefone || "(11) 99999-9999");
     if (!telefone) return;
     
-    const departamento = prompt("Departamento:", usuarioAtual.departamento);
+    const departamento = prompt("Departamento:", usuario.departamento || "Tecnologia da Informação");
     if (!departamento) return;
     
-    const cargo = prompt("Cargo:", usuarioAtual.cargo);
+    const cargo = prompt("Cargo:", usuario.cargo || "Administrador do Sistema");
     if (!cargo) return;
     
-    try {
-        mostrarLoading(true);
-        
-        const response = await fetch('/api/profile', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                nome, email, telefone, departamento, cargo
-            })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            usuarioAtual = { ...usuarioAtual, nome, email, telefone, departamento, cargo };
-            atualizarInterface();
-            showNotification('Perfil atualizado!', 'success');
-        }
-    } catch (error) {
-        console.error('Erro:', error);
-        showNotification('Erro ao atualizar perfil', 'error');
-    } finally {
-        mostrarLoading(false);
-    }
-});
-
-// Botão Salvar Configurações
-document.querySelector('button.bg-darkblue')?.addEventListener('click', async function() {
-    const button = this;
-    const originalText = button.textContent;
+    // Atualizar dados
+    usuario.nome = nome;
+    usuario.email = email;
+    usuario.telefone = telefone;
+    usuario.departamento = departamento;
+    usuario.cargo = cargo;
     
-    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Salvando...';
-    button.disabled = true;
+    // Salvar
+    localStorage.setItem('usuario', JSON.stringify(usuario));
     
-    try {
-        const switches = document.querySelectorAll('.switch input[type="checkbox"]');
-        
-        const response = await fetch('/api/profile/configuracoes', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                notificacoesEmail: switches[0]?.checked || false,
-                autenticacaoDoisFatores: switches[1]?.checked || false,
-                modoEscuro: switches[2]?.checked || false
-            })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            showNotification('Configurações salvas!', 'success');
-        }
-    } catch (error) {
-        console.error('Erro:', error);
-        showNotification('Erro ao salvar configurações', 'error');
-    } finally {
-        button.textContent = originalText;
-        button.disabled = false;
-    }
-});
-
-// Botão de privacidade
-const privacyBtn = document.querySelector('.fa-user-shield')?.closest('button');
-if (privacyBtn) {
-    privacyBtn.addEventListener('click', function() {
-        showNotification('Configurações de privacidade em desenvolvimento', 'info');
-    });
+    // Recarregar interface
+    carregarDadosUsuario();
+    
+    showNotification('Perfil atualizado com sucesso!', 'success');
 }
 
-// Botão de exclusão de conta
-document.querySelector('.fa-trash-alt')?.closest('button')?.addEventListener('click', async function(e) {
-    e.preventDefault();
-    
-    if (!confirm('⚠️ TEM CERTEZA QUE DESEJA EXCLUIR SUA CONTA?\nEsta ação não pode ser desfeita!')) {
-        return;
-    }
-    
-    const confirmacao = prompt('Digite "EXCLUIR" para confirmar:');
-    
-    if (confirmacao !== 'EXCLUIR') {
-        showNotification('Operação cancelada', 'info');
-        return;
-    }
-    
-    try {
-        mostrarLoading(true);
-        
-        const response = await fetch('/api/profile', {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            localStorage.removeItem('auth_token');
-            showNotification('Conta excluída!', 'success');
-            
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 2000);
-        }
-    } catch (error) {
-        console.error('Erro:', error);
-        showNotification('Erro ao excluir conta', 'error');
-    } finally {
-        mostrarLoading(false);
-    }
-});
-
-// ==================== FUNÇÕES UTILITÁRIAS ====================
-
-function mostrarLoading(mostrar) {
-    let loading = document.getElementById('loading');
-    if (mostrar) {
-        if (!loading) {
-            loading = document.createElement('div');
-            loading.id = 'loading';
-            loading.className = 'fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-50';
-            loading.innerHTML = '<div class="bg-white p-4 rounded-lg"><i class="fas fa-spinner fa-spin text-2xl"></i><p class="mt-2">Carregando...</p></div>';
-            document.body.appendChild(loading);
-        }
-    } else if (loading) {
-        loading.remove();
-    }
-}
-
+// ==================== FUNÇÃO DE NOTIFICAÇÃO ====================
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full ${
@@ -423,7 +353,7 @@ function showNotification(message, type = 'info') {
     
     notification.innerHTML = `
         <div class="flex items-center">
-            <i class="fas ${icons[type]} mr-3"></i>
+            <i class="fas ${icons[type] || 'fa-info-circle'} mr-3"></i>
             <span>${message}</span>
         </div>
     `;
@@ -444,3 +374,105 @@ function showNotification(message, type = 'info') {
         }, 300);
     }, 3000);
 }
+
+// ==================== FUNÇÃO DE EXPORTAÇÃO DE DADOS ====================
+function exportarDadosPerfil() {
+    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+    const configuracoes = JSON.parse(localStorage.getItem('usuario_configuracoes') || '{}');
+    
+    const dados = {
+        usuario,
+        configuracoes,
+        dataExportacao: new Date().toLocaleString('pt-BR')
+    };
+    
+    const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `perfil_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    
+    showNotification('Dados exportados com sucesso!', 'success');
+}
+
+// ==================== FUNÇÃO DE ALTERAÇÃO DE SENHA ====================
+function alterarSenha() {
+    const senhaAtual = prompt("Digite sua senha atual:");
+    if (!senhaAtual) return;
+    
+    // Simular verificação de senha (em produção, isso seria feito no backend)
+    const senhaCorreta = 'senha123'; // Isso seria verificado no backend
+    
+    if (senhaAtual !== senhaCorreta) {
+        showNotification('Senha atual incorreta!', 'error');
+        return;
+    }
+    
+    const novaSenha = prompt("Digite sua nova senha (mínimo 8 caracteres):");
+    if (!novaSenha) return;
+    
+    if (novaSenha.length < 8) {
+        showNotification('A senha deve ter pelo menos 8 caracteres!', 'error');
+        return;
+    }
+    
+    if (!/[A-Z]/.test(novaSenha) || !/[0-9]/.test(novaSenha)) {
+        showNotification('A senha deve conter pelo menos uma letra maiúscula e um número!', 'error');
+        return;
+    }
+    
+    const confirmarSenha = prompt("Confirme sua nova senha:");
+    if (novaSenha !== confirmarSenha) {
+        showNotification('As senhas não conferem!', 'error');
+        return;
+    }
+    
+    // Aqui você enviaria para o backend
+    showNotification('Senha alterada com sucesso!', 'success');
+}
+
+// ==================== FUNÇÃO DE EXCLUSÃO DE CONTA ====================
+function excluirConta() {
+    if (confirm('⚠️ TEM CERTEZA QUE DESEJA EXCLUIR SUA CONTA?\nEsta ação não pode ser desfeita!')) {
+        const confirmacao = prompt('Digite "EXCLUIR" para confirmar:');
+        
+        if (confirmacao === 'EXCLUIR') {
+            // Limpar dados do localStorage
+            localStorage.removeItem('usuario');
+            localStorage.removeItem('usuario_configuracoes');
+            localStorage.removeItem('sessao');
+            
+            showNotification('Conta excluída com sucesso!', 'success');
+            
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 2000);
+        } else {
+            showNotification('Operação cancelada', 'info');
+        }
+    }
+}
+
+// Adicionar CSS para modo escuro
+const style = document.createElement('style');
+style.textContent = `
+    .dark-mode {
+        background-color: #1a202c !important;
+        color: #e2e8f0 !important;
+    }
+    .dark-mode .bg-white {
+        background-color: #2d3748 !important;
+        color: #e2e8f0 !important;
+    }
+    .dark-mode .text-gray-800 {
+        color: #e2e8f0 !important;
+    }
+    .dark-mode .text-gray-600 {
+        color: #a0aec0 !important;
+    }
+    .dark-mode .border-gray-200 {
+        border-color: #4a5568 !important;
+    }
+`;
+document.head.appendChild(style);
