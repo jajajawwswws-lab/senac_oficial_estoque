@@ -1,4 +1,4 @@
-// account.js - versão melhorada e funcional
+// account.js - versão completa com botões separados
 document.addEventListener("DOMContentLoaded", () => {
   console.log("📄 Página carregada");
 
@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   carregarTabelaItens();
   carregarGrafico();
 
+  // Botão adicionar item
   document.getElementById("btnAdicionarItem")?.addEventListener("click", () => {
     adicionarItem();
   });
@@ -62,44 +63,47 @@ function carregarTabelaItens() {
       <td class="px-6 py-4 text-sm text-gray-500">${item.categoria}</td>
       <td class="px-6 py-4 text-sm text-gray-500">${item.localizacao}</td>
       <td class="px-6 py-4 text-sm text-gray-500">${item.responsavel}</td>
-      <td class="px-6 py-4 text-sm">
-        <span class="status-badge ${badgeClass(item.status)}">${statusText(item.status)}</span>
-        <button class="remover text-gray-600 hover:text-gray-900 px-2 py-1 rounded ml-2">Remover</button>
+      <td class="px-6 py-4 text-sm text-gray-500">
+        <button class="status-em-uso px-2 py-1 rounded mr-1">Em Uso</button>
+        <button class="status-defeito px-2 py-1 rounded mr-1">Defeito</button>
+        <button class="status-manutencao px-2 py-1 rounded">Manutenção</button>
+        <button class="remover px-2 py-1 rounded ml-2">Remover</button>
       </td>
     `;
     tbody.appendChild(tr);
 
-    // Atualizar status com clique
-    tr.querySelector(".status-badge").addEventListener("click", () => toggleStatus(item.id));
+    // Estilizar os botões conforme status
+    atualizarBotoesStatus(tr, item.status);
+
+    // Adicionar eventos
+    tr.querySelector(".status-em-uso").addEventListener("click", () => atualizarStatus(item.id, "em_uso"));
+    tr.querySelector(".status-defeito").addEventListener("click", () => atualizarStatus(item.id, "defeito"));
+    tr.querySelector(".status-manutencao").addEventListener("click", () => atualizarStatus(item.id, "manutencao"));
     tr.querySelector(".remover").addEventListener("click", () => removerItem(item.id));
   });
 }
 
-// ===== BADGES =====
-function badgeClass(status) {
-  if (status === "em_uso") return "bg-green-100 text-green-800 px-2 py-1 rounded cursor-pointer";
-  if (status === "defeito") return "bg-red-100 text-red-800 px-2 py-1 rounded cursor-pointer";
-  if (status === "manutencao") return "bg-orange-100 text-orange-800 px-2 py-1 rounded cursor-pointer";
-}
-function statusText(status) {
-  if (status === "em_uso") return "Em Uso";
-  if (status === "defeito") return "Com Defeito";
-  if (status === "manutencao") return "Em Manutenção";
+// ===== ESTILIZAR BOTÕES DE STATUS =====
+function atualizarBotoesStatus(tr, status) {
+  const btnEmUso = tr.querySelector(".status-em-uso");
+  const btnDefeito = tr.querySelector(".status-defeito");
+  const btnManutencao = tr.querySelector(".status-manutencao");
+
+  btnEmUso.className = `status-em-uso px-2 py-1 rounded mr-1 ${status === "em_uso" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-500"}`;
+  btnDefeito.className = `status-defeito px-2 py-1 rounded mr-1 ${status === "defeito" ? "bg-red-100 text-red-800" : "bg-gray-100 text-gray-500"}`;
+  btnManutencao.className = `status-manutencao px-2 py-1 rounded ${status === "manutencao" ? "bg-orange-100 text-orange-800" : "bg-gray-100 text-gray-500"}`;
 }
 
-// ===== TROCAR STATUS =====
-function toggleStatus(id) {
+// ===== ATUALIZAR STATUS =====
+function atualizarStatus(id, status) {
   const itens = JSON.parse(localStorage.getItem("itens") || "[]");
   const index = itens.findIndex((i) => i.id === id);
-  if (index === -1) return;
-
-  const novoStatus = itens[index].status === "em_uso" ? "defeito" :
-                     itens[index].status === "defeito" ? "manutencao" : "em_uso";
-  itens[index].status = novoStatus;
-  localStorage.setItem("itens", JSON.stringify(itens));
-
-  carregarTabelaItens();
-  carregarGrafico();
+  if (index !== -1) {
+    itens[index].status = status;
+    localStorage.setItem("itens", JSON.stringify(itens));
+    carregarTabelaItens();
+    carregarGrafico();
+  }
 }
 
 // ===== REMOVER ITEM =====
