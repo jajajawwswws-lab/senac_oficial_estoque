@@ -15,9 +15,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const strengthText = document.getElementById('strengthText');
     const passwordMatchMessage = document.getElementById('passwordMatchMessage');
     const submitButton = document.getElementById('submitButton');
-
+    const result = document.getElementById('result');
     // 🔑 CHAVE CORRETA DO SITE
-    const RECAPTCHA_SITE_KEY = '6LctSXksAAAAAM19sUp0Z0wRZ7nAMIxlLGe7EDgf';
+   // const RECAPTCHA_SITE_KEY = '6LeJZ28sAAAAAMgcIEAe0vm2GHIKZUZRucVyeiYU';
 
     // Validação em tempo real
     let isFormValid = {
@@ -259,63 +259,77 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ENVIO DO FORMULÁRIO
-    form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        if (!submitButton.disabled) {
-            // Desabilitar botão
-            submitButton.disabled = true;
-            const originalText = submitButton.textContent;
-            submitButton.textContent = 'Creating account...';
-            submitButton.style.backgroundColor = '#9CA3AF';
-            
-            try {
-                if (typeof grecaptcha === 'undefined') {
-                    throw new Error('reCAPTCHA não carregado');
-                }
-                
-                // Executar reCAPTCHA
-                const token = await grecaptcha.execute(RECAPTCHA_SITE_KEY, {action: 'register'});
-                
-                // Criar FormData
-                const formData = new FormData(form);
-                formData.append('g-recaptcha-response', token);
-                
-                // Enviar para o backend
-                const respostaBackend = await fetch("/api/crtback", {
-                    method: "POST",
-                    body: formData
-                });
-
-                const resultado = await respostaBackend.json();
-
-                if (!resultado.sucesso) {
-                    alert("⚠ Erro no reCAPTCHA: " + resultado.erro);
-                    submitButton.disabled = false;
-                    submitButton.textContent = originalText;
-                    updateSubmitButton();
-                    return;
-                }
-                
-                // Sucesso!
-                alert("✅ Conta criada com sucesso!");
-                form.reset();
-                window.location.href = "index.html";
-                
-            } catch (error) {
-                console.error('Erro:', error); // ÚNICO LOG MANTIDO!
-                
-                alert('❌ Erro ao criar conta. Tente novamente.');
-                
-                submitButton.disabled = false;
-                submitButton.textContent = originalText;
-                updateSubmitButton();
-            }
-        } else {
-            alert('Please fill all required fields correctly.');
+    let isSubmitting = false;
+    window.onsubmit = function(token)
+    {
+        if(isSubmitting)
+        {
+            console.log("submission already in the progress .. . ");
+            return;
         }
-    });
+        if(!emailInput || !passwordInput || !confirmPasswordInput || !result)
+        {
+            console.error('Required form elements not found');
+            alert('Erro ao carregar o formulário. Sistema nao encontrou ou nao validou elementos.');
+            return;
+        }
+        const gmail = emailInput.value.trim();
+        const pass_word = passwordInput.value.trim();
+        const require_pass_word = confirmPasswordInput.value.trim();
+        if(!validarCampos(gmail,pass_word,require_pass_word))
+            {
+                console.log("teste de return sucess");
+                return;
+            }
+        isSubmitting = true;
+        result.style.color = "black"; 
 
+        result.textContent = "🔄 Verificando conta...";
+        fetch('/api/crtback.ts',{
+            
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                email: gmail,
+                password: pass_word,
+                confirm_password: require_pass_word,
+                recaptchaToken: token
+            })
+        })
+        .then(async response => {
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || `Erro HTTP: ${response.status}`);
+            }
+            return response.json();
+        })
+
+    .then(data => {
+        console.log("Resposta do backend:", data);
+
+        if (data.success) {
+            result.style.color = "green";
+            result.textContent = "✅ Login realizado com sucesso!";
+
+            // Redirect after 1 second
+            setTimeout(() => {
+                window.location.href = "index.html";
+            }, 1000);
+        } else {
+            result.style.color = "red";
+            result.textContent = data.error || "E-mail ou senha incorretos!";
+            isSubmitting = false; // Reset flag on failure
+        }
+    })
+    .catch(error => {
+        console.error("Erro:", error);
+        result.style.color = "red";
+        result.textContent = "❌ Erro de conexão com o servidor.";
+        isSubmitting = false; // Reset flag on error
+    });
+    }
     // Validação inicial silenciosa
     setTimeout(() => {
         usernameInput.dispatchEvent(new Event('input'));
@@ -323,5 +337,17 @@ document.addEventListener('DOMContentLoaded', function() {
         passwordInput.dispatchEvent(new Event('input'));
         confirmPasswordInput.dispatchEvent(new Event('input'));
     }, 100);
+    
 });
 
+document.addEventListener('DOMContentLoaded', function() {
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            // The reCAPTCHA will call onSubmit automatically
+        });
+    } else {
+        console.error('Login form not found');
+    }
+});
