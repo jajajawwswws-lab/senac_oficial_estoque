@@ -1,62 +1,42 @@
 // ===============================
-// LOGIN - VERSÃO QUE SE ADAPTA
+// LOGIN COM LOCALSTORAGE - VERSÃO COM DEBUG
 // ===============================
 
-// Verificar sessão
+// Verificar se já está logado
 try {
     const sessao = JSON.parse(localStorage.getItem('sessao'));
     if (sessao && sessao.email) {
+        console.log("✅ Já logado como:", sessao.email);
         window.location.href = "account.html";
     }
-} catch (e) {}
+} catch (e) {
+    console.log("Nenhuma sessão ativa");
+}
 
 let isSubmitting = false;
 
 window.onSubmit = function(token) {
     console.log("🔑 Tentativa de login...");
+    console.log("Token reCAPTCHA:", token ? "✅ OK" : "❌ Ausente");
 
-    if (isSubmitting) return;
+    if (isSubmitting) {
+        console.log("⏳ Já processando...");
+        return;
+    }
 
-    // ===== PROCURAR ELEMENTOS DE DIVERSAS FORMAS =====
-    const emailInput = document.getElementById('email') || 
-                      document.querySelector('input[type="email"]') ||
-                      document.querySelector('input[name="email"]');
-    
-    const passwordInput = document.getElementById('password') || 
-                         document.querySelector('input[type="password"]') ||
-                         document.querySelector('input[name="password"]');
-    
-    const resultadoDiv = document.getElementById('result') || 
-                        document.getElementById('resultado') ||
-                        document.querySelector('.message') ||
-                        document.querySelector('#resultado');
-    
-    const loginForm = document.getElementById('loginForm') || 
-                     document.querySelector('form');
+    // Pegar elementos
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const resultadoDiv = document.getElementById('result');
 
-    // DEBUG: Mostrar o que encontrou
-    console.log("📋 Elementos encontrados:");
-    console.log("- Email:", emailInput);
-    console.log("- Senha:", passwordInput);
-    console.log("- Resultado:", resultadoDiv);
-    console.log("- Form:", loginForm);
+    // DEBUG: Verificar elementos
+    console.log("📋 Elementos do formulário:");
+    console.log("- Email input:", emailInput ? "✅" : "❌");
+    console.log("- Password input:", passwordInput ? "✅" : "❌");
+    console.log("- Result div:", resultadoDiv ? "✅" : "❌");
 
     if (!emailInput || !passwordInput || !resultadoDiv) {
-        console.error("❌ Elementos não encontrados!");
-        
-        // Tenta encontrar qualquer input na página
-        const allInputs = document.querySelectorAll('input');
-        console.log("Inputs disponíveis:", allInputs.length);
-        allInputs.forEach((input, i) => {
-            console.log(`Input ${i+1}:`, {
-                id: input.id,
-                type: input.type,
-                name: input.name,
-                class: input.className
-            });
-        });
-        
-        alert("Erro ao carregar formulário. Verifique o console (F12) para mais detalhes.");
+        alert("Erro ao carregar formulário. Recarregue a página.");
         return;
     }
 
@@ -69,6 +49,10 @@ window.onSubmit = function(token) {
     const email = emailInput.value.trim();
     const password = passwordInput.value;
 
+    console.log("📝 Dados do formulário:");
+    console.log("- Email digitado:", email);
+    console.log("- Senha digitada:", password ? "******" : "❌ VAZIA");
+
     if (!email || !password) {
         alert("Preencha todos os campos!");
         if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
@@ -80,13 +64,29 @@ window.onSubmit = function(token) {
 
     setTimeout(() => {
         try {
+            // Buscar usuários do LocalStorage
             const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
             
-            console.log("📋 Usuários cadastrados:", usuarios.map(u => u.email));
+            console.log("📊 TOTAL DE USUÁRIOS NO SISTEMA:", usuarios.length);
+            console.log("📋 LISTA COMPLETA DE EMAILS CADASTRADOS:");
+            usuarios.forEach((u, i) => {
+                console.log(`   ${i+1}. "${u.email}"`);
+            });
 
+            // Procurar email (ignorando maiúsculas/minúsculas)
             const usuario = usuarios.find(u => 
                 u.email.toLowerCase().trim() === email.toLowerCase().trim()
             );
+
+            console.log("🔍 RESULTADO DA BUSCA:");
+            if (usuario) {
+                console.log("   ✅ Email ENCONTRADO!");
+                console.log("   - Username:", usuario.username);
+                console.log("   - Senha no sistema:", usuario.password);
+                console.log("   - Senha fornecida:", password);
+            } else {
+                console.log("   ❌ Email NÃO ENCONTRADO na lista acima");
+            }
 
             if (!usuario) {
                 resultadoDiv.style.color = 'red';
@@ -98,6 +98,10 @@ window.onSubmit = function(token) {
             }
 
             if (usuario.password !== password) {
+                console.log("❌ SENHA INCORRETA");
+                console.log("   - Esperada:", usuario.password);
+                console.log("   - Recebida:", password);
+                
                 resultadoDiv.style.color = 'red';
                 resultadoDiv.textContent = "❌ Senha incorreta!";
                 passwordInput.classList.add('border-red-500');
@@ -106,6 +110,8 @@ window.onSubmit = function(token) {
                 return;
             }
 
+            // SUCESSO!
+            console.log("🎉 LOGIN BEM-SUCEDIDO!");
             resultadoDiv.style.color = 'green';
             resultadoDiv.textContent = "✅ Login realizado! Redirecionando...";
 
@@ -120,9 +126,9 @@ window.onSubmit = function(token) {
             }, 1500);
 
         } catch (error) {
-            console.error("Erro:", error);
+            console.error("❌ ERRO GRAVE:", error);
             resultadoDiv.style.color = 'red';
-            resultadoDiv.textContent = "❌ Erro interno.";
+            resultadoDiv.textContent = "❌ Erro interno. Tente novamente.";
             isSubmitting = false;
             if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
         }
@@ -130,15 +136,33 @@ window.onSubmit = function(token) {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("📄 Página carregada");
+    console.log("📄 PÁGINA DE LOGIN CARREGADA");
     
-    // Mostrar status
+    // MOSTRAR STATUS ATUAL
     const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
-    console.log("Usuários disponíveis:", usuarios.length);
+    console.log("📊 USUÁRIOS DISPONÍVEIS AGORA:", usuarios.length);
+    console.log("📋 EMAIS CADASTRADOS:", usuarios.map(u => u.email));
+
+    const loginForm = document.getElementById('loginForm');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const resultadoDiv = document.getElementById('result');
+
+    if (loginForm) {
+        loginForm.addEventListener('submit', (e) => e.preventDefault());
+    }
+
+    if (emailInput) {
+        emailInput.addEventListener('input', () => {
+            emailInput.classList.remove('border-red-500');
+            if (resultadoDiv) resultadoDiv.textContent = '';
+        });
+    }
     
-    // Prevenir submit padrão
-    const form = document.querySelector('form');
-    if (form) {
-        form.addEventListener('submit', (e) => e.preventDefault());
+    if (passwordInput) {
+        passwordInput.addEventListener('input', () => {
+            passwordInput.classList.remove('border-red-500');
+            if (resultadoDiv) resultadoDiv.textContent = '';
+        });
     }
 });
