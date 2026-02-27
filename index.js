@@ -1,222 +1,142 @@
 // ===============================
-// SISTEMA DE LOGIN SIMPLIFICADO
+// LOGIN COM LOCALSTORAGE - VERSÃO CORRIGIDA
 // ===============================
 
 // Verificar se já está logado
 const sessao = JSON.parse(localStorage.getItem('sessao'));
 if (sessao && sessao.email) {
-    // Se já estiver logado, redireciona para account
     window.location.href = "account.html";
 }
 
-// Configurar toggle de senha
-function setupPasswordToggle() {
-    const togglePassword = document.getElementById('togglePassword');
-    const passwordInput = document.getElementById('password');
-    
-    if (togglePassword && passwordInput) {
-        togglePassword.addEventListener('click', function() {
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
-            
-            const icon = this.querySelector('i');
-            if (icon) {
-                icon.classList.toggle('fa-eye');
-                icon.classList.toggle('fa-eye-slash');
-            }
-        });
-    }
-}
+// Variável de controle
+let isSubmitting = false;
 
-// Limpar mensagens
-function limparMensagens() {
-    const resultado = document.getElementById('resultado');
-    if (resultado) {
-        resultado.textContent = '';
-        resultado.style.color = '';
-        resultado.style.backgroundColor = '';
-    }
-    
+// Função do reCAPTCHA
+window.onSubmit = function(token) {
+    console.log("🔑 Tentativa de login...");
+
+    if (isSubmitting) return;
+
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
-    
-    if (emailInput) emailInput.classList.remove('border-red-500');
-    if (passwordInput) passwordInput.classList.remove('border-red-500');
-}
+    const resultadoDiv = document.getElementById('result'); // ID CORRIGO: 'result'
 
-// Mostrar erro
-function mostrarErro(mensagem, campo = null) {
-    const resultado = document.getElementById('resultado');
-    if (resultado) {
-        resultado.style.color = 'red';
-        resultado.style.backgroundColor = '#ffeeee';
-        resultado.style.border = '1px solid #ffcccc';
-        resultado.style.padding = '10px';
-        resultado.style.borderRadius = '5px';
-        resultado.style.marginTop = '10px';
-        resultado.textContent = mensagem;
+    // Limpar mensagens anteriores
+    if (resultadoDiv) {
+        resultadoDiv.textContent = '';
+        resultadoDiv.style.color = '';
     }
-    
-    if (campo === 'email') {
-        document.getElementById('email')?.classList.add('border-red-500');
-    } else if (campo === 'password') {
-        document.getElementById('password')?.classList.add('border-red-500');
-    }
-}
+    emailInput?.classList.remove('border-red-500');
+    passwordInput?.classList.remove('border-red-500');
 
-// Mostrar sucesso
-function mostrarSucesso(mensagem) {
-    const resultado = document.getElementById('resultado');
-    if (resultado) {
-        resultado.style.color = 'green';
-        resultado.style.backgroundColor = '#eeffee';
-        resultado.style.border = '1px solid #ccffcc';
-        resultado.style.padding = '15px';
-        resultado.style.borderRadius = '5px';
-        resultado.style.marginTop = '10px';
-        resultado.style.textAlign = 'center';
-        resultado.innerHTML = `
-            <div style="font-size: 18px; margin-bottom: 10px;">✅ ${mensagem}</div>
-            <div style="font-size: 12px; color: #888;">Redirecionando...</div>
-        `;
-    }
-}
+    const email = emailInput?.value.trim();
+    const password = passwordInput?.value;
 
-// Validar campos
-function validarCampos(email, password) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!email) {
-        alert("O email é obrigatório.");
-        return false;
-    }
-
-    if (!emailRegex.test(email)) {
-        alert("Digite um e-mail válido.");
-        return false;
-    }
-
-    if (!password) {
-        alert("A senha é obrigatória.");
-        return false;
-    }
-
-    if (password.length < 8) {
-        alert("A senha deve conter pelo menos 8 caracteres.");
-        return false;
-    }
-
-    return true;
-}
-
-// Callback do reCAPTCHA
-window.onSubmit = function(token) {
-    console.log("🔑 Fazendo login...");
-    
-    limparMensagens();
-    
-    const email = document.getElementById('email')?.value.trim();
-    const password = document.getElementById('password')?.value;
-    const resultado = document.getElementById('resultado');
-    
+    // Validações básicas
     if (!email || !password) {
-        alert('Preencha todos os campos');
+        alert("Preencha todos os campos!");
         if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
         return;
     }
-    
-    if (!validarCampos(email, password)) {
-        if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
-        return;
-    }
-    
-    resultado.textContent = "🔄 Verificando...";
-    
-    // ===== SIMULAR DELAY DE REDE =====
+
+    isSubmitting = true;
+    if (resultadoDiv) resultadoDiv.textContent = "🔄 Verificando...";
+
+    // Simular delay de rede
     setTimeout(() => {
         try {
-            // Buscar usuários do LocalStorage
+            // 1. Buscar usuários do LocalStorage
             const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
-            
             console.log("📋 Usuários cadastrados:", usuarios);
-            
-            // Procurar usuário
+
+            // 2. Procurar pelo email
             const usuario = usuarios.find(u => u.email === email);
-            
+
+            // 3. Validações
             if (!usuario) {
-                mostrarErro("❌ E-mail não cadastrado!", 'email');
+                console.log("❌ Email não encontrado");
+                if (resultadoDiv) {
+                    resultadoDiv.style.color = 'red';
+                    resultadoDiv.textContent = "❌ E-mail não cadastrado!";
+                }
+                emailInput?.classList.add('border-red-500');
+                isSubmitting = false;
                 if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
                 return;
             }
-            
+
             if (usuario.password !== password) {
-                mostrarErro("❌ Senha incorreta!", 'password');
+                console.log("❌ Senha incorreta");
+                if (resultadoDiv) {
+                    resultadoDiv.style.color = 'red';
+                    resultadoDiv.textContent = "❌ Senha incorreta!";
+                }
+                passwordInput?.classList.add('border-red-500');
+                isSubmitting = false;
                 if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
                 return;
             }
-            
-            // Sucesso!
-            mostrarSucesso("Login realizado com sucesso!");
-            
+
+            // 4. SUCESSO!
+            console.log("✅ Login bem-sucedido:", email);
+            if (resultadoDiv) {
+                resultadoDiv.style.color = 'green';
+                resultadoDiv.textContent = "✅ Login realizado! Redirecionando...";
+            }
+
             // Salvar sessão
             localStorage.setItem('sessao', JSON.stringify({
                 email: usuario.email,
                 username: usuario.username,
                 loginTime: new Date().toISOString()
             }));
-            
+
             // Redirecionar
             setTimeout(() => {
                 window.location.href = "account.html";
             }, 1500);
-            
+
         } catch (error) {
-            console.error("Erro:", error);
-            mostrarErro("❌ Erro ao fazer login");
+            console.error("❌ Erro no login:", error);
+            if (resultadoDiv) {
+                resultadoDiv.style.color = 'red';
+                resultadoDiv.textContent = "❌ Erro interno. Tente novamente.";
+            }
+            isSubmitting = false;
             if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
         }
-    }, 1000);
+    }, 800); // Delay de 800ms
 };
 
-// Inicializar
+// Inicialização quando a página carrega
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("📄 Página carregada");
-    
-    setupPasswordToggle();
-    
+    console.log("📄 Página de login carregada");
+
+    // Mostrar usuários salvos para debug (opcional)
+    const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+    console.log("Usuários disponíveis para login:", usuarios.map(u => u.email));
+
     const loginForm = document.getElementById('loginForm');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
-    const resultado = document.getElementById('resultado');
-    
-    if (!loginForm) {
-        console.error("❌ Formulário não encontrado");
-        return;
+    const resultadoDiv = document.getElementById('result'); // ID CORRIGO
+
+    // Evento do formulário (acionado pelo botão g-recaptcha)
+    if (loginForm) {
+        loginForm.addEventListener('submit', (e) => e.preventDefault());
     }
-    
-    loginForm.addEventListener('submit', function(event) {
-        event.preventDefault();
-        if (typeof grecaptcha !== 'undefined') {
-            grecaptcha.execute();
-        }
-    });
-    
-    // Limpar mensagens ao digitar
+
+    // Limpar mensagens de erro ao digitar
     if (emailInput) {
-        emailInput.addEventListener('input', function() {
-            this.classList.remove('border-red-500');
-            if (resultado) resultado.textContent = '';
+        emailInput.addEventListener('input', () => {
+            emailInput.classList.remove('border-red-500');
+            if (resultadoDiv) resultadoDiv.textContent = '';
         });
     }
-    
     if (passwordInput) {
-        passwordInput.addEventListener('input', function() {
-            this.classList.remove('border-red-500');
-            if (resultado) resultado.textContent = '';
+        passwordInput.addEventListener('input', () => {
+            passwordInput.classList.remove('border-red-500');
+            if (resultadoDiv) resultadoDiv.textContent = '';
         });
     }
-    
-    // Mostrar usuários para debug
-    const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
-    console.log("📋 Usuários disponíveis:", usuarios);
 });
