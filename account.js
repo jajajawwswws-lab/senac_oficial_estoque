@@ -1,4 +1,4 @@
-// account.js - versão completa com botões separados
+
 document.addEventListener("DOMContentLoaded", () => {
   console.log("📄 Página carregada");
 
@@ -13,7 +13,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// ===== FUNÇÃO ADICIONAR ITEM =====
 function adicionarItem() {
   const nome = prompt("Nome do item:");
   if (!nome) return;
@@ -47,7 +46,6 @@ function adicionarItem() {
   carregarGrafico();
 }
 
-// ===== CARREGAR TABELA =====
 function carregarTabelaItens() {
   const tbody = document.getElementById("tabelaItens");
   if (!tbody) return;
@@ -72,7 +70,6 @@ function carregarTabelaItens() {
     `;
     tbody.appendChild(tr);
 
-    // Estilizar os botões conforme status
     atualizarBotoesStatus(tr, item.status);
 
     // Adicionar eventos
@@ -83,7 +80,6 @@ function carregarTabelaItens() {
   });
 }
 
-// ===== ESTILIZAR BOTÕES DE STATUS =====
 function atualizarBotoesStatus(tr, status) {
   const btnEmUso = tr.querySelector(".status-em-uso");
   const btnDefeito = tr.querySelector(".status-defeito");
@@ -106,7 +102,6 @@ function atualizarStatus(id, status) {
   }
 }
 
-// ===== REMOVER ITEM =====
 function removerItem(id) {
   if (!confirm("Deseja realmente remover este item?")) return;
 
@@ -118,7 +113,6 @@ function removerItem(id) {
   carregarGrafico();
 }
 
-// ===== CARREGAR GRÁFICO =====
 function carregarGrafico() {
   const ctx = document.getElementById("statusChart")?.getContext("2d");
   if (!ctx) return;
