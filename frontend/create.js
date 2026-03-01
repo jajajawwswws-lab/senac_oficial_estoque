@@ -1,8 +1,10 @@
-// create.js - Versão 100% Supabase (sem localStorage)
+// create_account.js - VERSÃO FINAL COM LOCALSTORAGE FUNCIONAL
 
-// DEFINIR A FUNÇÃO GLOBAL ONSUBMIT IMEDIATAMENTE
-window.onsubmit = function(token) {
+// DEFINIR A FUNÇÃO GLOBAL ONSUBMIT IMEDIATAMENTE (fora do DOMContentLoaded)
+window.onSubmit = function(token) {
     console.log("onSubmit called with token:", token);
+    // A implementação será sobrescrita dentro do DOMContentLoaded
+    // mas isso garante que a função existe quando o reCAPTCHA carregar
 };
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -22,54 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitButton = document.getElementById('submitButton');
     const result = document.getElementById('result');
 
-    // ============================================
-    // CONFIGURAÇÃO SUPABASE (frontend)
-    // ============================================
-   // ============================================
-// CONFIGURAÇÃO SUPABASE (frontend)
-// ============================================
-// As credenciais são definidas no HTML antes deste script carregar
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Verificar se as credenciais foram carregadas
-    if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
-        console.error("❌ Credenciais Supabase não encontradas no window");
-        console.log("Verifique se as linhas no HTML estão corretas:");
-        console.log('<script>window.SUPABASE_URL = "sua-url"; window.SUPABASE_ANON_KEY = "sua-chave";</script>');
-    } else {
-        console.log("✅ Credenciais encontradas:", {
-            url: window.SUPABASE_URL,
-            key: window.SUPABASE_ANON_KEY.substring(0, 10) + "..."
-        });
-    }
-    
-    // Criar cliente Supabase
-    let supabase = null;
-    if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY && window.supabase) {
-        supabase = window.supabase.createClient(
-            window.SUPABASE_URL,
-            window.SUPABASE_ANON_KEY
-        );
-        console.log("✅ Supabase client inicializado");
-    } else {
-        console.warn("⚠️ Supabase não configurado corretamente");
-    }
-    
-    // ... (resto do seu código)
-});
-    // Criar cliente Supabase (apenas se as credenciais existirem)
-    let supabase = null;
-    if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY && window.supabase) {
-        supabase = window.supabase.createClient(
-            window.SUPABASE_URL,
-            window.SUPABASE_ANON_KEY
-        );
-        console.log("✅ Supabase client inicializado");
-    } else {
-        console.warn("⚠️ Credenciais Supabase não encontradas");
-    }
-
-    // Validação em tempo real (MANTIDO IGUAL)
+    // Validação em tempo real
     let isFormValid = {
         username: false,
         email: false,
@@ -78,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
         confirmPassword: false
     };
 
-    // Toggle de visibilidade da senha (MANTIDO IGUAL)
+    // Toggle de visibilidade da senha
     if (togglePasswordBtn) {
         togglePasswordBtn.addEventListener('click', function() {
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -103,16 +58,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Validação de username (MANTIDO IGUAL)
+    // Validação de username
     usernameInput.addEventListener('input', function() {
         const username = this.value.trim();
         const pattern = /^[a-zA-Z0-9_]+$/;
         
-        if (username.length < 4) {
-            showFieldError(this, 'Username must be at least 4 characters');
+        if (username.length < 3) {
+            showFieldError(this, 'Username must be at least 3 characters');
             isFormValid.username = false;
-        } else if (username.length > 15) {
-            showFieldError(this, 'Username cannot exceed 15 characters');
+        } else if (username.length > 30) {
+            showFieldError(this, 'Username cannot exceed 30 characters');
             isFormValid.username = false;
         } else if (!pattern.test(username)) {
             showFieldError(this, 'Only letters, numbers and underscores allowed');
@@ -124,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSubmitButton();
     });
 
-    // Validação de email (MANTIDO IGUAL)
+    // Validação de email
     emailInput.addEventListener('input', function() {
         const email = this.value.trim();
         const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -142,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSubmitButton();
     });
     
-    // Formatação e validação de telefone (MANTIDO IGUAL)
+    // Formatação e validação de telefone
     phoneInput.addEventListener('input', function() {
         clearFieldError(this);
         
@@ -166,6 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const digitCount = phoneDigits.length;
         
+        // Validar DDDs brasileiros válidos
         if (digitCount >= 10) {
             const regex_phone = /^\((11|12|13|14|15|16|17|18|19|21|22|24|27|28|31|32|33|34|35|37|38|41|42|43|44|45|46|47|48|49|51|53|54|55|61|62|63|64|65|66|67|68|69|71|73|74|75|77|79|81|82|83|84|85|86|87|88|89|91|92|93|94|95|96|97|98|99)\)\s?\d{4,5}-\d{4}$/;
             
@@ -185,7 +141,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSubmitButton();
     });
 
-    // Validação de força da senha (MANTIDO IGUAL)
+    // Validação de força da senha
     passwordInput.addEventListener('input', function() {
         const password = this.value;
         
@@ -208,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSubmitButton();
     });
 
-    // Validação de confirmação de senha (MANTIDO IGUAL)
+    // Validação de confirmação de senha
     confirmPasswordInput.addEventListener('input', function() {
         checkPasswordMatch();
         updateSubmitButton();
@@ -247,13 +203,17 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let score = 0;
         
+        // Comprimento
         if (password.length >= 8) score += 1;
         if (password.length >= 12) score += 1;
+        
+        // Complexidade
         if (/[a-z]/.test(password)) score += 1;
         if (/[A-Z]/.test(password)) score += 1;
         if (/[0-9]/.test(password)) score += 1;
         if (/[^a-zA-Z0-9]/.test(password)) score += 1;
         
+        // Ajustar para escala de 1-5
         return Math.min(Math.max(Math.floor(score / 2) + 1, 1), 5);
     }
 
@@ -313,46 +273,45 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // ============================================
-    // IMPLEMENTAÇÃO 100% SUPABASE (SEM LOCALSTORAGE)
-    // ============================================
+    // Variável de controle para evitar múltiplos envios
     let isSubmitting = false;
 
-    // SOBRESCREVER A FUNÇÃO ONSYBMIT
-    window.onsubmit = async function(token) {
+    // IMPLEMENTAÇÃO CORRIGIDA - SALVA NO LOCALSTORAGE
+    window.onSubmit = function(token) {
         // Prevenir múltiplos envios
         if(isSubmitting) {
             console.log("Submissão já em andamento...");
             return;
         }
 
-        // Validar elementos
+        // Validar elementos necessários
         if(!emailInput || !passwordInput || !confirmPasswordInput || !result) {
-            alert('Erro ao carregar o formulário.');
+            console.error('Elementos do formulário não encontrados');
+            alert('Erro ao carregar o formulário. Elementos não encontrados.');
             return;
         }
 
         // Obter valores
-        const email = emailInput.value.trim();
-        const password = passwordInput.value.trim();
-        const confirmPassword = confirmPasswordInput.value.trim();
+        const gmail = emailInput.value.trim();
+        const pass_word = passwordInput.value.trim();
+        const require_pass_word = confirmPasswordInput.value.trim();
         const username = usernameInput ? usernameInput.value.trim() : '';
         const phone = phoneInput ? phoneInput.value.trim() : '';
 
-        // Validações finais
-        if (!email || !password || !confirmPassword || !username) {
+        // Validar campos
+        if (!gmail || !pass_word || !require_pass_word || !username) {
             result.style.color = "red";
             result.textContent = "❌ Preencha todos os campos!";
             return;
         }
 
-        if (password !== confirmPassword) {
+        if (pass_word !== require_pass_word) {
             result.style.color = "red";
             result.textContent = "❌ As senhas não conferem!";
             return;
         }
 
-        if (password.length < 8) {
+        if (pass_word.length < 8) {
             result.style.color = "red";
             result.textContent = "❌ A senha deve ter pelo menos 8 caracteres!";
             return;
@@ -360,134 +319,97 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Marcar como enviando
         isSubmitting = true;
+        
+        // Mostrar mensagem de carregamento
         result.style.color = "black";
-        result.textContent = "🔄 Criando sua conta no Supabase...";
+        result.textContent = "🔄 Criando sua conta...";
 
-        try {
-            // ===== OPÇÃO 1: USAR A API DO BACKEND (RECOMENDADO) =====
-            const response = await fetch('/api/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email: email,
-                    password: password,
-                    confirm_password: confirmPassword,
-                    username: username,
-                    phone: phone,
-                    recaptchaToken: token
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                console.log("✅ Usuário criado no Supabase:", data);
+        // ===== SALVAR NO LOCALSTORAGE =====
+        setTimeout(() => {
+            try {
+                // Buscar usuários existentes
+                const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
                 
-                result.style.color = "green";
-                result.textContent = "✅ Conta criada! Verifique seu email.";
+                console.log("📋 Usuários existentes:", usuarios);
 
-                // Opcional: salvar apenas email no localStorage para lembrar
-                localStorage.setItem('last_email', email);
+                // Verificar se email já existe
+                if (usuarios.some(u => u.email === gmail)) {
+                    result.style.color = "red";
+                    result.textContent = "❌ Este email já está cadastrado!";
+                    isSubmitting = false;
+                    return;
+                }
+
+                // Criar novo usuário
+                const novoUsuario = {
+                    email: gmail,
+                    password: pass_word,
+                    username: username,
+                    phone: phone || '',
+                    createdAt: new Date().toISOString()
+                };
+
+                // Adicionar à lista
+                usuarios.push(novoUsuario);
+
+                // 🔴 SALVAR NO LOCALSTORAGE
+                localStorage.setItem('usuarios', JSON.stringify(usuarios));
+
+                // Mostrar no console
+                console.log("✅ USUÁRIO SALVO NO LOCALSTORAGE!");
+                console.log("📋 Dados:", novoUsuario);
+                console.log("📊 Total de usuários agora:", usuarios.length);
+                console.log("👤 Todos os emails:", usuarios.map(u => u.email));
+
+                // Mostrar sucesso
+                result.style.color = "green";
+                result.textContent = "✅ Conta criada com sucesso!";
 
                 // Redirecionar para login
                 setTimeout(() => {
                     window.location.href = "index.html";
                 }, 2000);
-            } else {
-                // Erro retornado pela API
+
+            } catch (error) {
+                console.error("❌ Erro:", error);
                 result.style.color = "red";
-                result.textContent = `❌ ${data.error || 'Erro ao criar conta'}`;
+                result.textContent = "❌ Erro ao criar conta.";
                 isSubmitting = false;
             }
-
-            // ===== OPÇÃO 2: USAR SUPABASE DIRETO (ALTERNATIVA) =====
-            /*
-            if (!supabase) {
-                throw new Error("Supabase não configurado");
-            }
-
-            // Criar usuário diretamente no Supabase
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-                email: email,
-                password: password,
-                options: {
-                    data: {
-                        username: username,
-                        phone: phone
-                    }
-                }
-            });
-
-            if (authError) {
-                throw authError;
-            }
-
-            console.log("✅ Usuário criado:", authData);
-            
-            result.style.color = "green";
-            result.textContent = "✅ Conta criada! Verifique seu email.";
-            
-            setTimeout(() => {
-                window.location.href = "index.html";
-            }, 2000);
-            */
-
-        } catch (error) {
-            console.error("❌ Erro detalhado:", error);
-            
-            let mensagemErro = "❌ Erro ao criar conta";
-            
-            if (error.message) {
-                if (error.message.includes("User already registered")) {
-                    mensagemErro = "❌ Este email já está cadastrado";
-                } else if (error.message.includes("network")) {
-                    mensagemErro = "❌ Erro de conexão";
-                } else {
-                    mensagemErro = `❌ ${error.message}`;
-                }
-            }
-            
-            result.style.color = "red";
-            result.textContent = mensagemErro;
-            isSubmitting = false;
-        }
+        }, 1500);
     };
 
-    // Evento de clique do botão (MANTIDO IGUAL)
+    // Adicionar evento de clique ao botão para executar reCAPTCHA
     submitButton.addEventListener('click', function(event) {
         event.preventDefault();
         
+        // Verificar se o botão está habilitado
         if (submitButton.disabled) {
             return;
         }
         
-        if (typeof grecaptcha !== 'undefined' && grecaptcha) {
-            grecaptcha.ready(function() {
-                grecaptcha.execute('6LctSXksAAAAAM19sUp0Z0wRZ7nAMIxlLGe7EDgf', {action: 'submit'}).then(function(token) {
-                    window.onsubmit(token);
-                });
+        // Executar reCAPTCHA
+        grecaptcha.ready(function() {
+            grecaptcha.execute('6LctSXksAAAAAM19sUp0Z0wRZ7nAMIxlLGe7EDgf', {action: 'submit'}).then(function(token) {
+                // Chamar nossa função onSubmit com o token
+                window.onSubmit(token);
             });
-        } else {
-            console.warn("reCAPTCHA não carregado");
-            window.onsubmit('no-token');
-        }
+        });
     });
 
-    // Prevenir submissão padrão
+    // Prevenir submissão padrão do formulário
     if (form) {
         form.addEventListener('submit', function(event) {
             event.preventDefault();
         });
     }
 
-    // Validação inicial
+    // Validação inicial silenciosa após carregar a página
     setTimeout(() => {
-        if (usernameInput) usernameInput.dispatchEvent(new Event('input'));
-        if (emailInput) emailInput.dispatchEvent(new Event('input'));
-        if (phoneInput) phoneInput.dispatchEvent(new Event('input'));
-        if (passwordInput) passwordInput.dispatchEvent(new Event('input'));
-        if (confirmPasswordInput) confirmPasswordInput.dispatchEvent(new Event('input'));
+        usernameInput.dispatchEvent(new Event('input'));
+        emailInput.dispatchEvent(new Event('input'));
+        phoneInput.dispatchEvent(new Event('input'));
+        passwordInput.dispatchEvent(new Event('input'));
+        confirmPasswordInput.dispatchEvent(new Event('input'));
     }, 100);
 });

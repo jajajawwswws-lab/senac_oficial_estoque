@@ -1,13 +1,5 @@
 import { IncomingMessage, ServerResponse } from "node:http";
-import { createClient } from "@supabase/supabase-js";
-
-//import { User } from "./users.js";  // 👈 IMPORTANTE: Importar a interface User
-
-// Configuração do Supabase
-const supabaseUrl = process.env["SUPABASE_ANON_KEY"]!;
-const supabaseServiceKey = process.env["SUPABASE_SERVICE_ROLE_KEY"]!;
-
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+import { addUser, userExists, User } from "./users.js"; // Importar funções compartilhadas
 
 // Interface do corpo esperado
 interface RegisterRequest {
@@ -80,6 +72,17 @@ async function ServerRequest(
             return;
         }
 
+        // Validar se email já está cadastrado (USANDO FUNÇÃO COMPARTILHADA)
+        if (userExists(email)) {
+            response.statusCode = 409;
+            response.end(JSON.stringify({
+                success: false,
+                error: 'Este email já está cadastrado',
+                field: 'email'
+            }));
+            return;
+        }
+
         // Verificar reCAPTCHA
         const verifyAPI = await fetch(
             'https://www.google.com/recaptcha/api/siteverify',
@@ -87,7 +90,7 @@ async function ServerRequest(
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({
-                    secret: process.env["RECAPTCHA_SECRET_KEY"] || '6LctSXksAAAAALmMFlvRvFJ9o1D2gUqt_lbvOVUg',
+                    secret: '6LctSXksAAAAALmMFlvRvFJ9o1D2gUqt_lbvOVUg',
                     response: recaptchaToken
                 })
             }
@@ -106,77 +109,30 @@ async function ServerRequest(
             return;
         }
 
-        // 1. PRIMEIRO: Verificar se email já existe no Supabase
-        const { data: existingUser } = await supabaseAdmin
-            .from('users')
-            .select('email')
-            .eq('email', email)
-            .single();
+        // CRIAR O USUÁRIO E SALVAR NO ARRAY COMPARTILHADO
+        const novoUsuario: User = {
+            email: email,
+            password: password, // ⚠️ Idealmente hasheado!
+            username: username || '',
+            phone: phone || '',
+            createdAt: new Date()
+        };
 
-        if (existingUser) {
-            response.statusCode = 409;
-            response.end(JSON.stringify({
-                success: false,
-                error: 'Este email já está cadastrado',
-                field: 'email'
-            }));
-            return;
-        }
+        // USAR FUNÇÃO COMPARTILHADA PARA ADICIONAR
+        addUser(novoUsuario);
 
-        // 2. CRIAR USUÁRIO no Supabase Auth
-        const { data: authData, error: authError } = await supabaseAdmin.auth.signUp({
-            email,
-            password,
-            options: {
-                data: {
-                    username,
-                    phone
-                }
-            }
-        });
-
-        if (authError) {
-            console.error("❌ Erro no Auth:", authError);
-            response.statusCode = 400;
-            response.end(JSON.stringify({
-                success: false,
-                error: authError.message
-            }));
-            return;
-        }
-
-        // 3. SALVAR DADOS ADICIONAIS na tabela 'users'
-        //importante para log
-        if (authData.user) {
-            const { error: insertError } = await supabaseAdmin
-                .from('users')
-                .insert([
-                    {
-                        id: authData.user.id,
-                        email: email,
-                        username: username || email.split('@')[0],
-                        phone: phone || null,
-                        created_at: new Date().toISOString()
-                    }
-                ]);
-
-            if (insertError) {
-                console.error("❌ Erro ao salvar dados adicionais:", insertError);
-                // Não falha a requisição, apenas loga o erro
-            }
-        }
-
-        console.log(`✅ USUÁRIO CRIADO NO SUPABASE: ${email}`);
+        console.log(`✅ USUÁRIO CRIADO: ${email}`);
+        console.log(`📋 Total: ${global.users.length}`);
+        console.log('📋 Usuários:', global.users.map(u => u.email));
 
         // ✅ Sucesso
         response.statusCode = 200;
         response.end(JSON.stringify({
             success: true,
-            message: "Conta criada com sucesso! Verifique seu email.",
+            message: "Conta criada com sucesso!",
             data: { 
                 email,
-                username,
-                id: authData.user?.id
+                username
             }
         }));
 

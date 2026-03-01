@@ -190,13 +190,32 @@
             margin-right: 5px;
         }
         
-        /* Estilo para mensagem de resultado */
-        #resultado {
+        /* Estilo para mensagem de resultado - CORRIGIDO para #result */
+        #result {
             margin-top: 20px;
             padding: 10px;
             border-radius: 4px;
             text-align: center;
             font-size: 14px;
+            min-height: 50px;
+            transition: all 0.3s ease;
+        }
+        
+        /* Classes para mensagens de erro/sucesso */
+        .success-message {
+            color: green !important;
+            background-color: #eeffee !important;
+            border: 1px solid #ccffcc !important;
+        }
+        
+        .error-message {
+            color: red !important;
+            background-color: #ffeeee !important;
+            border: 1px solid #ffcccc !important;
+        }
+        
+        .border-red-500 {
+            border: 2px solid #ff4444 !important;
         }
         
         /* Divisor */
@@ -370,8 +389,8 @@
                     </div>
                 </form>
                 
-                <!-- Div para mostrar resultados -->
-                <div id="resultado"></div>
+                <!-- Div para mostrar resultados - ID CORRIGIDO para 'result' -->
+                <div id="result"></div>
                 
                 <div class="divider">
                     <span>New to Senac System?</span>
@@ -407,4 +426,3 @@
     <script src="index.js"></script>
 </body>
 </html>
-
