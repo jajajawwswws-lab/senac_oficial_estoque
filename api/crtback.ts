@@ -1,9 +1,21 @@
 import { IncomingMessage, ServerResponse } from "node:http";
+import { createClient } from "@supabase/supabase-js";
+
+//import { User } from "./users.js";  // 👈 IMPORTANTE: Importar a interface User
+
+// Configuração do Supabase
+const supabaseUrl = process.env["SUPABASE_ANON_KEY"]!;
+const supabaseServiceKey = process.env["SUPABASE_SERVICE_ROLE_KEY"]!;
+
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 // Interface do corpo esperado
-interface LoginRequest {
+interface RegisterRequest {
     email: string;
     password: string;
+    confirm_password: string;
+    username: string;
+    phone: string;
     recaptchaToken: string;
 }
 
@@ -18,15 +30,13 @@ async function ServerRequest(
     response.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    // Preflight
     if (request.method === 'OPTIONS') {
         response.statusCode = 200;
         response.end();
         return;
     }
 
-    // Apenas POST
-    if (request.method !== 'POST' && request.method !== 'GET') {
+    if (request.method !== 'POST') {
         response.statusCode = 405;
         response.end(JSON.stringify({
             success: false,
@@ -36,32 +46,21 @@ async function ServerRequest(
     }
 
     try {
-        // 🔹 Coletar body
+        // Coletar body
         let body = '';
-
         await new Promise<void>((resolve, reject) => {
-            request.on('data', chunk => {
-                body += chunk.toString();
-            });
-
+            request.on('data', chunk => body += chunk.toString());
             request.on('end', () => resolve());
-
             request.on('error', err => reject(err));
         });
 
-        // 🔹 Parse JSON
-        const data: LoginRequest = JSON.parse(body);
+        const data: RegisterRequest = JSON.parse(body);
+        const { email, password, confirm_password, username, phone, recaptchaToken } = data;
 
-        const { email, password, recaptchaToken } = data;
+        console.log("📝 Body recebido (registro):", { email, username, phone });
 
-        console.log("Body recebido:", {
-            email,
-            password: password ? "[PRESENT]" : "[MISSING]",
-            token: recaptchaToken ? "[PRESENT]" : "[MISSING]"
-        });
-
-        // 🔹 Validar campos obrigatórios
-        if (!email || !password || !recaptchaToken) {
+        // Validar campos obrigatórios
+        if (!email || !password || !confirm_password || !recaptchaToken) {
             response.statusCode = 400;
             response.end(JSON.stringify({
                 success: false,
@@ -70,77 +69,119 @@ async function ServerRequest(
             return;
         }
 
-        // 🔐 Verificar reCAPTCHA no Google
+        // Validar se as senhas conferem
+        if (password !== confirm_password) {
+            response.statusCode = 400;
+            response.end(JSON.stringify({
+                success: false,
+                error: 'As senhas não conferem',
+                field: 'confirm_password'
+            }));
+            return;
+        }
+
+        // Verificar reCAPTCHA
         const verifyAPI = await fetch(
             'https://www.google.com/recaptcha/api/siteverify',
             {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({
-                    secret: '6LctSXksAAAAALmMFlvRvFJ9o1D2gUqt_lbvOVUg', // ⚠ coloque sua secret key real
-                   //altere depois para esconder
+                    secret: process.env["RECAPTCHA_SECRET_KEY"] || '6LctSXksAAAAALmMFlvRvFJ9o1D2gUqt_lbvOVUg',
                     response: recaptchaToken
                 })
             }
         );
 
         const verifyDataAPI = await verifyAPI.json();
+        console.log("🤖 Resposta Google reCAPTCHA:", verifyDataAPI);
 
-        console.log("Resposta Google:", verifyDataAPI);
-
-        // 🔴 Verifica sucesso
         if (!verifyDataAPI) {
             response.statusCode = 400;
             response.end(JSON.stringify({
                 success: false,
-                error: 'reCAPTCHA inválido'
+                error: 'reCAPTCHA inválido',
+                field: 'recaptcha'
             }));
             return;
         }
 
-        // 🔴 Validação extra para reCAPTCHA v3 (score)
-        console.log("reCAPTCHA válido ✔");
+        // 1. PRIMEIRO: Verificar se email já existe no Supabase
+        const { data: existingUser } = await supabaseAdmin
+            .from('users')
+            .select('email')
+            .eq('email', email)
+            .single();
 
-        if (!email || !password) {
+        if (existingUser) {
+            response.statusCode = 409;
+            response.end(JSON.stringify({
+                success: false,
+                error: 'Este email já está cadastrado',
+                field: 'email'
+            }));
+            return;
+        }
+
+        // 2. CRIAR USUÁRIO no Supabase Auth
+        const { data: authData, error: authError } = await supabaseAdmin.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    username,
+                    phone
+                }
+            }
+        });
+
+        if (authError) {
+            console.error("❌ Erro no Auth:", authError);
             response.statusCode = 400;
             response.end(JSON.stringify({
-            success: false,
-            error: "Por favor, preencha email e senha"
-        }));
-        return;
-    }
+                success: false,
+                error: authError.message
+            }));
+            return;
+        }
 
-// ✅ Sucesso: qualquer email e senha preencheu
-    response.statusCode = 200;
-    response.end(JSON.stringify({
-        success: true,
-        message: "Login realizado com sucesso!",
-        data: { email }
-    }));
+        // 3. SALVAR DADOS ADICIONAIS na tabela 'users'
+        //importante para log
+        if (authData.user) {
+            const { error: insertError } = await supabaseAdmin
+                .from('users')
+                .insert([
+                    {
+                        id: authData.user.id,
+                        email: email,
+                        username: username || email.split('@')[0],
+                        phone: phone || null,
+                        created_at: new Date().toISOString()
+                    }
+                ]);
+
+            if (insertError) {
+                console.error("❌ Erro ao salvar dados adicionais:", insertError);
+                // Não falha a requisição, apenas loga o erro
+            }
+        }
+
+        console.log(`✅ USUÁRIO CRIADO NO SUPABASE: ${email}`);
 
         // ✅ Sucesso
         response.statusCode = 200;
         response.end(JSON.stringify({
             success: true,
-            message: "Login realizado com sucesso!",
-            data: { email }
+            message: "Conta criada com sucesso! Verifique seu email.",
+            data: { 
+                email,
+                username,
+                id: authData.user?.id
+            }
         }));
 
     } catch (error) {
-
-        console.error("Erro no backend:", error);
-
-        if (error instanceof SyntaxError) {
-            response.statusCode = 400;
-            response.end(JSON.stringify({
-                success: false,
-                error: "JSON inválido"
-            }));
-            return;
-        }
-
+        console.error("❌ Erro no backend (registro):", error);
         response.statusCode = 500;
         response.end(JSON.stringify({
             success: false,

@@ -1,150 +1,199 @@
 import { IncomingMessage, ServerResponse } from "node:http";
+import { findUserByEmail, getAllUsers } from "./users.js"; // Importar funções compartilhadas
+import { VercelRequest, VercelResponse } from '@vercel/node';
+import { supabase } from "./lib/supabaseClient.js";
+import { supabaseAdmin } from "./banco.js";
 
-// Interface for the expected request body
+
+
+export default async function handler(
+  request: VercelRequest,
+  response: VercelResponse
+){
+
+
+  response.setHeader('Access-Control-Allow-Origin', '*')
+  response.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+  response.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
+  if (request.method === 'OPTIONS') {
+    return response.status(200).end()
+  }
+
+  if (request.method !== 'POST') {
+    return response.status(405).json({ error: 'Método não permitido' })
+  }
+
+  try {
+    const { email, password, action } = request.body
+
+    if (action === 'signup') {
+      const { data, error } = await supabaseAdmin.auth.signUp({
+        email,
+        password
+      })
+
+      if (error) throw error
+      return response.status(201).json(data)
+    }
+
+    if (action === 'signin') {
+      const { data, error } = await supabaseAdmin.auth.signInWithPassword({
+        email,
+        password
+      })
+
+      if (error) throw error
+      return response.status(200).json(data)
+    }
+
+    return response.status(400).json({ error: 'Ação inválida' })
+  } catch (error) {
+    console.error('Erro:', error)
+    return response.status(500).json({ error: 'Erro interno do servidor' })
+  }
+
+
+
+
+
+
+
+
+}
+
+
+// Interface do corpo esperado para login
 interface LoginRequest {
     email: string;
     password: string;
     recaptchaToken: string;
 }
 
-async function ServerRequest(request: IncomingMessage, response: ServerResponse): Promise<void> {
-    // Set CORS headers
+async function ServerRequest(
+    request: IncomingMessage,
+    response: ServerResponse
+): Promise<void> {
+
     response.setHeader('Content-Type', 'application/json');
     response.setHeader('Access-Control-Allow-Origin', '*');
     response.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    // Handle OPTIONS preflight request
     if (request.method === 'OPTIONS') {
         response.statusCode = 200;
         response.end();
         return;
     }
 
-    // Only accept POST requests
     if (request.method !== 'POST') {
         response.statusCode = 405;
         response.end(JSON.stringify({
             success: false,
-            error: 'Método não permitido no sistema'
+            error: 'Método não permitido'
         }));
         return;
     }
 
     try {
-        // Collect the request body
         let body = '';
-        
-        // Use Promise to handle the data collection
-        const bodyData = await new Promise<string>((resolve, reject) => {
-            request.on('data', (chunk) => {
-                body += chunk.toString();
-            });
-            
-            request.on('end', () => {
-                resolve(body);
-            });
-            
-            request.on('error', (err) => {
-                reject(err);
-            });
+        await new Promise<void>((resolve, reject) => {
+            request.on('data', chunk => body += chunk.toString());
+            request.on('end', () => resolve());
+            request.on('error', err => reject(err));
         });
 
-        // Parse the body as LoginRequest
-        const data: LoginRequest = JSON.parse(bodyData);
-        console.log('Body recebido:', data);
-
+        const data: LoginRequest = JSON.parse(body);
         const { email, password, recaptchaToken } = data;
-        console.log('Email:', email);
-        console.log('Password:', password ? '[PRESENT]' : '[MISSING]');
-        console.log('Token:', recaptchaToken);
 
-        // Validate required fields
+        console.log("📝 Body recebido (login):", { email });
+
+        // Validar campos obrigatórios
         if (!email || !password || !recaptchaToken) {
             response.statusCode = 400;
             response.end(JSON.stringify({
                 success: false,
-                error: 'Campos obrigatórios não preenchidos',
-                details: {
-                    email: !email,
-                    password: !password,
-                    recaptchaToken: !recaptchaToken
-                }
+                error: 'Campos obrigatórios não preenchidos'
             }));
             return;
         }
 
-        // Verify reCAPTCHA with Google
-        const verifyAPI = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-                secret: '6LctSXksAAAAALmMFlvRvFJ9o1D2gUqt_lbvOVUg', // Your secret key
-                response: recaptchaToken
-            })
-        });
-        
+        // Verificar reCAPTCHA
+        const verifyAPI = await fetch(
+            'https://www.google.com/recaptcha/api/siteverify',
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                    secret: '6LctSXksAAAAALmMFlvRvFJ9o1D2gUqt_lbvOVUg',
+                    response: recaptchaToken
+                })
+            }
+        );
+
         const verifyDataAPI = await verifyAPI.json();
-        console.log('Resposta do Google:', verifyDataAPI);
-        
-        // Check if reCAPTCHA verification failed
+        console.log("🤖 Resposta Google reCAPTCHA:", verifyDataAPI);
+
         if (!verifyDataAPI) {
             response.statusCode = 400;
             response.end(JSON.stringify({
                 success: false,
                 error: 'reCAPTCHA inválido',
-                details: verifyDataAPI
+                field: 'recaptcha'
             }));
             return;
         }
 
-        console.log('reCAPTCHA válido!');
+        // BUSCAR USUÁRIO NO ARRAY COMPARTILHADO
+        console.log("🔍 Buscando usuário:", email);
+        console.log("📋 Todos usuários:", getAllUsers().map(u => u.email));
+        
+        const usuario = findUserByEmail(email);
 
-        // Check credentials (example hardcoded check)
-        if (email !== "senac@gmail.com" || password !== "senacoficialmnbvcxz321#@!") {
+        if (!usuario) {
+            console.log("❌ Usuário não encontrado:", email);
             response.statusCode = 401;
             response.end(JSON.stringify({
                 success: false,
-                error: "Credenciais inválidas"
+                error: 'E-mail não encontrado',
+                field: 'email'
             }));
             return;
         }
-//lkm
-        // Success response
+
+        // Verificar senha
+        if (usuario.password !== password) {
+            console.log("❌ Senha incorreta para:", email);
+            response.statusCode = 401;
+            response.end(JSON.stringify({
+                success: false,
+                error: 'Senha incorreta',
+                field: 'password'
+            }));
+            return;
+        }
+
+        console.log("✅ Login bem-sucedido:", email);
+
+        // Login bem-sucedido
         response.statusCode = 200;
         response.end(JSON.stringify({
             success: true,
-            message: 'Login realizado com sucesso!',
-            data: { email }
+            message: "Login realizado com sucesso!",
+            data: {
+                email: usuario.email,
+                username: usuario.username
+            }
         }));
 
     } catch (error) {
-        console.error('Erro no backend:', error);
-        
-        // Handle JSON parse errors specifically
-        if (error instanceof SyntaxError) {
-            response.statusCode = 400;
-            response.end(JSON.stringify({
-                success: false,
-                error: 'JSON inválido'
-            }));
-            return;
-        }
-        
-        // Generic server error
+        console.error("❌ Erro no backend (login):", error);
         response.statusCode = 500;
         response.end(JSON.stringify({
             success: false,
-            error: 'Erro interno do servidor'
+            error: "Erro interno do servidor"
         }));
     }
 }
 
-// This function seems unnecessary for your use case
-// async function Handler(req: any, res: any): Promise<string> {
-//     return `User ${req.nome} and ${res.email}`;
-// }
 export default ServerRequest;
-// export type { Handler };

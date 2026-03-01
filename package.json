@@ -1,0 +1,29 @@
+{
+  "name": "senac_oficial_estoque",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "tsc",
+    "preinstall": "npx npm-force-resolutions"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "@vercel/node": "^4.0.0",
+    "cookie": "^0.7.0",
+    "path-to-regexp": "^6.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.35",
+    "typescript": "^5.3.3"
+  },
+  "resolutions": {
+    "path-to-regexp": "6.2.2",
+    "cookie": "0.7.0",
+    "semver": "7.6.0",
+    "express": "4.19.2",
+    "braces": "3.0.3",
+    "ws": "8.17.1",
+    "tar": "6.2.1",
+    "minimatch": "9.0.4"
+  }
+}

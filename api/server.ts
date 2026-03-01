@@ -47,3 +47,4 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, () => {
     console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
+import ServerRequest from "./ServerRequest";

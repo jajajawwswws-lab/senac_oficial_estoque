@@ -1,0 +1,29 @@
+{
+  "name": "senac_oficial_estoque",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jajajawwswws-lab/senac_oficial_estoque.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/jajajawwswws-lab/senac_oficial_estoque/issues"
+  },
+  "homepage": "https://github.com/jajajawwswws-lab/senac_oficial_estoque#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.0",
+    "@vercel/node": "^3.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.3",
+    "typescript": "^5.9.3"
+  }
+}
