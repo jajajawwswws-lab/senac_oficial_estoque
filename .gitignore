@@ -25,3 +25,11 @@ lerna-debug.log*
 .env.development
 .env.test
 .env.production
+
+# Ignorar arquivos compilados do Typescript
+*.js
+*.js.map
+*d.ts
+*d.ts.map
+
+!vite.config.js
