@@ -6,7 +6,7 @@ const supabaseServiceKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!
 
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
-// Handler sem tipos complexos
+// Handler sem tipos complexos (usando any)
 export default async function handler(req: any, res: any) {
   // Configurar CORS
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -45,11 +45,22 @@ export default async function handler(req: any, res: any) {
         })
       }
 
+      // Verificar variáveis de ambiente
+      if (!supabaseUrl || !supabaseServiceKey) {
+        return res.status(500).json({
+          success: false,
+          error: 'Erro de configuração do servidor'
+        })
+      }
+
       // CADASTRO
       if (action === 'signup') {
         const { data, error } = await supabaseAdmin.auth.signUp({
           email,
-          password
+          password,
+          options: {
+            emailRedirectTo: `${req.headers.origin || 'http://localhost:3000'}/welcome`
+          }
         })
 
         if (error) {
