@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { findUserByEmail } from './users';
-//wttt
+//wtttj
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
@@ -38,5 +38,6 @@ export default async function handler(
     }
   });
 }
+
 
 
