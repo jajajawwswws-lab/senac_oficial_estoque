@@ -1,270 +1,129 @@
-import express, { Request, Response, NextFunction } from 'express';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
+import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
+import dotenv from 'dotenv';
+import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
 
-/**
- * Environment vars
- * - SUPABASE_URL
- * - SUPABASE_SERVICE_ROLE_KEY
- * - PORT (optional)
- * - ALLOWED_ORIGINS (comma separated) - optional, defaults to http://localhost:3000
- * - RECAPTCHA_SECRET (optional) - if set, reCAPTCHA will be validated
- */
-
-const SUPABASE_URL = process.env['SUPABASE_URL'];
-const SUPABASE_SERVICE_ROLE_KEY = process.env['SUPABASE_SERVICE_ROLE_KEY'];
-const ALLOWED_ORIGINS = (process.env['ALLOWED_ORIGINS'] || 'http://localhost:3000').split(',').map(s => s.trim());
-const RECAPTCHA_SECRET = process.env['RECAPTCHA_SECRET'];
-
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error('FATAL: Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env vars');
-  process.exit(1);
-}
-
-const supabaseAdmin: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
-
 const app = express();
 app.use(express.json());
+app.use(cors({ origin: process.env['CORS_ORIGIN'] || '*' }));
 
-// CORS setup
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (e.g., curl, server-to-server)
-    if (!origin) return callback(null, true);
-    if (ALLOWED_ORIGINS.includes('*') || ALLOWED_ORIGINS.includes(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error('Not allowed by CORS'));
-  }
-}));
-
-// Rate limiter (configurable via env if desired)
 const limiter = rateLimit({
-  windowMs: Number(process.env['RATE_WINDOW_MS'] || 60_000), // 1 minute
-  max: Number(process.env['RATE_MAX'] || 10), // limit each IP to 10 requests per window
+  windowMs: 15 * 60 * 1000,
+  max: 200,
   standardHeaders: true,
   legacyHeaders: false,
 });
-app.use('/api/register', limiter);
+app.use(limiter);
 
-// Simple logger middleware
-app.use((req, _res, next) => {
-  console.info(JSON.stringify({
-    t: new Date().toISOString(),
-    method: req.method,
-    path: req.path,
-    ip: req.ip
-  }));
-  next();
+// Server-side Supabase admin client (SERVICE ROLE) - must NOT be exposed to clients
+const SUPABASE_URL = process.env['SUPABASE_URL'] || 'https://fbbkshvhbfgdopsgtlxi.supabase.co';
+const SUPABASE_SERVICE_ROLE_KEY = process.env['SUPABASE_SERVICE_ROLE_KEY'] || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiYmtzaHZoYmZnZG9wc2d0bHhpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTg3MzYyOSwiZXhwIjoyMDg3NDQ5NjI5fQ.3a6zBgyKhPyUUIJLuaA8W3qEcv-_JfQsgDF_M9AAnQY';
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment');
+  process.exit(1);
+}
+
+const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  auth: { persistSession: false },
 });
 
-type RecaptchaResponse = {
-  success?: boolean;
-  score?: number;
-  'error-codes'?: string[];
-};
-
-async function verifyRecaptcha(token: string | null): Promise<boolean> {
-  if (!RECAPTCHA_SECRET) {
-    // Optional behavior: skip if not configured
-    return true;
-  }
-  if (!token) return false;
-  try {
-    const params = new URLSearchParams();
-    params.append('secret', RECAPTCHA_SECRET);
-    params.append('response', token);
-
-    const r = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params.toString(),
-    });
-
-    const json = (await r.json()) as RecaptchaResponse;
-    return !!json.success && (json.score === undefined || json.score >= 0.5);
-  } catch (err) {
-    console.error('recaptcha verify error', err);
-    return false;
-  }
+// Helper: basic validation
+function validatePayload(body: any) {
+  const { email, password } = body || {};
+  if (!email || typeof email !== 'string') return 'email is required';
+  if (!password || typeof password !== 'string') return 'password is required';
+  // optional: add email regex, password strength, username checks, phone format, etc.
+  return null;
 }
 
-async function adminGetUserByEmail(email: string) {
-  // Try admin.getUserByEmail if available in SDK; fallback to listUsers pagination.
+app.post('/api/register', async (req, res) => {
   try {
-    // @ts-ignore
-    const adminAuth: any = supabaseAdmin.auth.admin;
-    if (adminAuth && typeof adminAuth.getUserByEmail === 'function') {
-      const resp = await adminAuth.getUserByEmail(email);
-      return { found: !!resp?.data?.user, user: resp?.data?.user, error: resp?.error ?? null };
-    }
-  } catch (err) {
-    console.warn('admin.getUserByEmail threw, falling back to pagination:', err);
-  }
+    const errMsg = validatePayload(req.body);
+    if (errMsg) return res.status(400).json({ error: errMsg });
 
-  try {
-    const adminAuth: any = (supabaseAdmin.auth.admin as any);
-    const perPage = 1000;
-    let page = 1;
-    while (true) {
-      const { data: listResp, error } = await adminAuth.listUsers({ page, perPage });
-      if (error) return { found: false, user: null, error };
-      const users = listResp?.users ?? [];
-      const match = users.find((u: any) => String(u.email).toLowerCase() === String(email).toLowerCase());
-      if (match) return { found: true, user: match, error: null };
-      if (users.length < perPage) break;
-      page++;
-    }
-    return { found: false, user: null, error: null };
-  } catch (err) {
-    return { found: false, user: null, error: err };
-  }
-}
+    const { email, password, username = null, phone = null, metadata = {} } = req.body;
 
-function validateUsername(username: string): boolean {
-  // allow letters, numbers, underscores, dots; 3-30 chars; cannot start/end with dot/underscore; no consecutive dots/underscores
-  const re = /^(?!.*[._]{2})(?![._])(?!.*[._]$)[a-zA-Z0-9._]{3,30}$/;
-  return re.test(username);
-}
+    // 1) Check existing user in "users" table (by email)
+    const { data: existing, error: fetchErr } = await supabaseAdmin
+      .from('users')
+      .select('id, email')
+      .eq('email', email)
+      .limit(1)
+      .maybeSingle();
 
-function validatePhone(phone?: string): boolean {
-  if (!phone) return true;
-  // basic minimal check: digits + optional + - spaces, 7-20 chars
-  return /^[\d+\-\s()]{7,20}$/.test(phone);
-}
-
-app.post('/api/register', async (req: Request, res: Response) => {
-  try {
-    const { email, password, username, phone, recaptchaToken } = req.body ?? {};
-
-    if (!email || !password || !username) {
-      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    if (fetchErr) {
+      console.error('Error checking existing user:', fetchErr);
+      return res.status(500).json({ error: 'Erro ao verificar usuário existente' });
     }
-    if (typeof email !== 'string' || typeof password !== 'string' || typeof username !== 'string') {
-      return res.status(400).json({ success: false, error: 'Invalid input types' });
-    }
-    if (password.length < 8) {
-      return res.status(400).json({ success: false, error: 'Password must be at least 8 characters' });
-    }
-    if (!validateUsername(username)) {
-      return res.status(400).json({ success: false, error: 'Invalid username format' });
-    }
-    if (!validatePhone(phone)) {
-      return res.status(400).json({ success: false, error: 'Invalid phone format' });
+    if (existing) {
+      return res.status(409).json({ error: 'Email já cadastrado' });
     }
 
-    const recaptchaOk = await verifyRecaptcha(recaptchaToken ?? null);
-    if (!recaptchaOk) {
-      return res.status(400).json({ success: false, error: 'reCAPTCHA verification failed' });
-    }
-
-    // Check if email exists in Auth
-    let emailExists = false;
-    try {
-      const { found, error } = await adminGetUserByEmail(email);
-      if (error) {
-        console.warn('Warning: error checking existing email', error);
-      } else if (found) {
-        emailExists = true;
-      }
-    } catch (err) {
-      console.warn('Error during email existence check', err);
-    }
-
-    if (emailExists) {
-      return res.status(409).json({ success: false, error: 'Email already in use' });
-    }
-
-    // Check username uniqueness in DB
-    try {
-      const { data: existing, error: qErr } = await supabaseAdmin
-        .from('users')
-        .select('id')
-        .eq('username', username)
-        .limit(1);
-
-      if (qErr) {
-        console.error('username uniqueness check error', qErr);
-      } else if (existing && Array.isArray(existing) && existing.length > 0) {
-        return res.status(409).json({ success: false, error: 'Username already taken' });
-      }
-    } catch (err) {
-      console.warn('username check unexpected error', err);
-    }
-
-    // Create Auth user
-    // @ts-ignore
-    const adminAuth: any = supabaseAdmin.auth.admin;
-    const createResp = await adminAuth.createUser({
+    // 2) Create Auth user via Admin (service_role)
+    // Using admin API: create user and set email_confirm = true optionally
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      email_confirm: false,
-      user_metadata: { username, phone },
+      user_metadata: { ...metadata, username, phone },
+      email_confirm: true, // set to true to bypass confirmation email; set false if you want confirmation flow
     });
 
-    const createError = createResp?.error ?? null;
-    const createdUserResp = createResp?.data ?? createResp; // depending on sdk shape
-
-    if (createError || !createdUserResp) {
-      console.error('auth.createUser error', createError ?? createdUserResp);
-      const errMsg = createError?.message ?? 'Failed to create user';
-      return res.status(400).json({ success: false, error: errMsg });
+    if (authError) {
+      console.error('Supabase admin.createUser error:', authError);
+      // If auth failed due to duplicate, map to 409
+      return res.status(400).json({ error: authError.message || 'Erro criando usuário no Auth' });
     }
 
-    const userId = createdUserResp.user?.id ?? createdUserResp?.id;
-    if (!userId) {
-      console.error('auth.createUser returned no id', createdUserResp);
-      return res.status(500).json({ success: false, error: 'Failed to create user' });
-    }
+    const authUserId = authData?.user?.id;
 
-    // Insert profile row
-    const { error: insertError } = await supabaseAdmin
+    // 3) Insert into "users" profile table (associate with auth user id if desired)
+    const insertPayload: any = {
+      email,
+      username,
+      phone,
+      created_at: new Date().toISOString(),
+    };
+    if (authUserId) insertPayload.auth_user_id = authUserId; // optional column
+
+    const { data: inserted, error: insertErr } = await supabaseAdmin
       .from('users')
-      .insert([{ id: userId, username, phone }]);
+      .insert([insertPayload])
+      .select()
+      .single();
 
-    if (insertError) {
-      console.error('insert profile error', { message: insertError.message });
-      // rollback auth user creation
+    if (insertErr) {
+      console.error('Error inserting user profile:', insertErr);
+      // Attempt to roll back auth user if profile insert totally failed
       try {
-        await adminAuth.deleteUser(userId);
-      } catch (delErr) {
-        console.error('failed to delete orphan auth user', delErr);
+        if (authUserId) {
+          await supabaseAdmin.auth.admin.deleteUser(authUserId);
+        }
+      } catch (rollbackErr) {
+        console.error('Failed to rollback auth user after profile insert failure:', rollbackErr);
       }
-      const message = String(insertError.message ?? '').toLowerCase();
-      if (message.includes('duplicate') || message.includes('unique')) {
-        return res.status(409).json({ success: false, error: 'Conflict: username or id already exists' });
-      }
-      return res.status(500).json({ success: false, error: 'Failed to create user profile' });
+      return res.status(500).json({ error: 'Erro ao criar perfil do usuário' });
     }
 
-    return res.status(201).json({ success: true, userId });
+    // Success
+    return res.status(201).json({
+      message: 'Usuário criado com sucesso',
+      auth_user: { id: authUserId, email: authData?.user?.email },
+      profile: inserted,
+    });
   } catch (err) {
-    console.error('unexpected error in /api/register', err);
-    return res.status(500).json({ success: false, error: 'Internal server error' });
+    console.error('Unexpected error in /api/register:', err);
+    return res.status(500).json({ error: 'Erro interno' });
   }
 });
 
 // health
-app.get('/api/health', (_req, res) => res.status(200).json({ ok: true }));
+app.get('/health', (_req, res) => res.status(200).json({ status: 'ok' }));
 
-// basic express error handler for CORS and others
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  console.error('handled error', err?.message ?? err);
-  res.status(400).json({ success: false, error: err?.message ?? 'Bad Request' });
+const port = process.env['PORT'] ? Number(process.env['PORT']) : 3000;
+app.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`);
 });
-
-// start if run directly
-if (require.main === module) {
-  const port = process.env['PORT'] ? Number(process.env['PORT']) : 3000;
-  app.listen(port, () => {
-    console.log(`api/register running on :${port}`);
-  });
-}
-
-export default app;

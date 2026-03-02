@@ -246,7 +246,19 @@
             </form>
         </div>
     </main>
+<!-- Coloque isto no <head> ou logo antes de carregar create.js -->
+<script>
+  // Valores públicos — OK expor no frontend desde que você tenha RLS configurada no banco
+  const SUPABASE_URL = 'https://fbbkshvhbfgdopsgtlxi.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiYmtzaHZoYmZnZG9wc2d0bHhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzM2MjksImV4cCI6MjA4NzQ0OTYyOX0.kP9aNo2u5xCiThFf0g6SHttnPV9HqvqBmremeG28H0Q';
+</script>
 
+<!-- Seu HTML existente (cabeçalho, formulário, etc.) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- carregue create.js depois de definir SUPABASE_URL e SUPABASE_ANON_KEY -->
+<script type="module" src="create.js"></script>
     <!-- reCAPTCHA -->
     <script src="https://www.google.com/recaptcha/api.js?render=6LctSXksAAAAAM19sUp0Z0wRZ7nAMIxlLGe7EDgf"></script>
     
