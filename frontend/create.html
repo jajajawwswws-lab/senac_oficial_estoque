@@ -38,43 +38,22 @@
             justify-content: center;
             padding: 10px 0;
         }
-
-        /* Animações */
-        .fade-in {
-            animation: fadeIn 0.3s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Loading spinner */
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #FAA628;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            margin-right: 8px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
 
+    <link rel="stylesheet" href="style.css">
+
     <!-- Header FIXO - Não mexe durante a rolagem -->
     <header class="fixed-header">
+        <div class="header-gradient"></div>
+        <div class="header-accent"></div>
         <div>
+            
             <hr style="border: none; height: 75px; background-color: rgb(6, 43, 124); margin: 0;">
             <hr style="border: none; height: 25px; background-color: rgb(250, 166, 40); margin: 0;">
             
+            <!-- Barras coloridas fixas -->
             <!-- Imagens centralizadas -->
             <div class="header-images">
                 <img src="senac-logo-png_seeklogo-205285.png" alt="logo" class="w-16">
@@ -91,7 +70,7 @@
             </h1>
 
             <!-- FORMULÁRIO -->
-            <form id="registrationForm" class="space-y-6" novalidate>
+            <form id="registrationForm" class="space-y-6" action="javascript:void(0);">
                 <!-- Username Field -->
                 <div class="space-y-2">
                     <label for="username" class="block font-medium text-gray-700">
@@ -137,7 +116,7 @@
                 <!-- Phone Field -->
                 <div class="space-y-2">
                     <label for="phone" class="block font-medium text-gray-700">
-                        Phone Number <span class="text-red-500">*</span>
+                        Phone Number<span class="text-red-500">*</span>
                     </label>
                     <input type="tel" 
                            id="phone" 
@@ -234,7 +213,7 @@
                 </button>
 
                 <!-- DIV PARA MENSAGENS DE RESULTADO -->
-                <div id="result" class="text-center mt-4 font-medium min-h-[60px]"></div>
+                <div id="result" class="text-center mt-4 font-medium"></div>
 
                 <!-- Already have an account? -->
                 <div class="text-center pt-4 border-t border-gray-200">
@@ -246,23 +225,17 @@
             </form>
         </div>
     </main>
-<!-- Coloque isto no <head> ou logo antes de carregar create.js -->
-<script>
-  // Valores públicos — OK expor no frontend desde que você tenha RLS configurada no banco
-  const SUPABASE_URL = 'https://fbbkshvhbfgdopsgtlxi.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiYmtzaHZoYmZnZG9wc2d0bHhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzM2MjksImV4cCI6MjA4NzQ0OTYyOX0.kP9aNo2u5xCiThFf0g6SHttnPV9HqvqBmremeG28H0Q';
-</script>
 
-<!-- Seu HTML existente (cabeçalho, formulário, etc.) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></script>
-<script src="https://cdn.tailwindcss.com"></script>
-
-<!-- carregue create.js depois de definir SUPABASE_URL e SUPABASE_ANON_KEY -->
-<script type="module" src="create.js"></script>
-    <!-- reCAPTCHA -->
-    <script src="https://www.google.com/recaptcha/api.js?render=6LctSXksAAAAAM19sUp0Z0wRZ7nAMIxlLGe7EDgf"></script>
-    
     <!-- JavaScript -->
     <script type="module" src="create.js"></script>
+    <script src="https://www.google.com/recaptcha/api.js?render=6LctSXksAAAAAM19sUp0Z0wRZ7nAMIxlLGe7EDgf"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
