@@ -1,186 +1,131 @@
-// create.js - Frontend integrado com backend /api/register
-document.addEventListener('DOMContentLoaded', function () {
-  console.log('✅ create.js - VERSÃO CORRIGIDA (com fetch para /api/register)');
-  console.log('🔍 Verificando localStorage antigo...');
+// create.js
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-  // Limpar qualquer dado antigo que possa causar confusão (opcional)
-  if (localStorage.getItem('users')) {
-    console.warn('⚠️ Dados antigos encontrados no localStorage. Limpando...');
-    localStorage.removeItem('users');
+console.info('✅ create.js iniciado com Supabase');
+
+// Certifique-se de que as variáveis públicas foram definidas no HTML
+if (typeof SUPABASE_URL === 'https://fbbkshvhbfgdopsgtlxi.supabase.co' || typeof SUPABASE_ANON_KEY === 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiYmtzaHZoYmZnZG9wc2d0bHhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzM2MjksImV4cCI6MjA4NzQ0OTYyOX0.kP9aNo2u5xCiThFf0g6SHttnPV9HqvqBmremeG28H0Q') {
+  throw new Error('SUPABASE_URL ou SUPABASE_ANON_KEY não definidos. Defina-os no HTML antes de carregar create.js');
+}
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Seletores do seu formulário (ajuste se necessário)
+const form = document.querySelector('#registrationForm');
+const emailInput = document.querySelector('#email');
+const passwordInput = document.querySelector('#password');
+const usernameInput = document.querySelector('#username');
+const phoneInput = document.querySelector('#phone');
+const submitButton = document.querySelector('#submitButton');
+const resultBox = document.querySelector('#result');
+
+function showResult(message, success) {
+  if (!resultBox) {
+    alert(message);
+    return;
+  }
+  resultBox.textContent = message;
+  resultBox.style.color = success ? 'green' : 'red';
+}
+
+function setLoading(loading) {
+  if (!submitButton) return;
+  submitButton.disabled = loading;
+  submitButton.innerHTML = loading ? '<span class="spinner"></span>Processing...' : 'Create your Estoque Senac account';
+}
+
+// Validações simples (ajuste conforme necessidade)
+function validateEmail() {
+  const val = (emailInput?.value || '').trim();
+  return /\S+@\S+\.\S+/.test(val);
+}
+function validatePassword() {
+  const val = passwordInput?.value || '';
+  return val.length >= 8;
+}
+function validateUsername() {
+  const val = (usernameInput?.value || '').trim();
+  return val.length >= 3;
+}
+function validatePhone() {
+  const val = (phoneInput?.value || '').trim();
+  return val.length > 0;
+}
+
+async function handleSubmit(e) {
+  e.preventDefault();
+  if (!form) return;
+
+  // simples revalidação
+  if (!validateEmail() || !validatePassword() || !validateUsername() || !validatePhone()) {
+    showResult('Please fill all fields correctly', false);
+    return;
   }
 
-  // --- ELEMENTOS DO DOM (ajuste os seletores conforme seu HTML) ---
-  const form = document.querySelector('#register-form'); // ajuste se necessário
-  const emailInput = document.querySelector('#email');
-  const passwordInput = document.querySelector('#password');
-  const usernameInput = document.querySelector('#username');
-  const phoneInput = document.querySelector('#phone');
-  const submitButton = document.querySelector('#submit-btn');
-  const resultBox = document.querySelector('#result'); // elemento para mostrar mensagens (opcional)
+  setLoading(true);
+  showResult('Creating your account...', true);
 
-  // Variáveis/flags de validação (implemente validateX funções conforme seu código)
-  const isFormValid = {
-    email: false,
-    password: false,
-    username: false,
-    phone: false,
-  };
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+  const username = usernameInput.value.trim();
+  const phone = phoneInput.value.trim();
 
-  function showResult(message, success) {
-    if (!resultBox) {
-      alert(message);
-      return;
-    }
-    resultBox.textContent = message;
-    resultBox.style.color = success ? 'green' : 'red';
-  }
+  try {
+    // 1) Cadastrar usuário no Supabase Auth (cliente) — usa anon key
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+    }, {
+      data: { username, phone } // metadados que ficam no perfil do usuário
+    });
 
-  function setLoading(loading) {
-    if (!submitButton) return;
-    submitButton.disabled = loading;
-    submitButton.textContent = loading ? 'Processing...' : 'Create account';
-  }
-
-  // Placeholder: implemente suas validações reais
-  function validateEmail() {
-    if (!emailInput) return;
-    const val = (emailInput.value || '').trim();
-    isFormValid.email = /\S+@\S+\.\S+/.test(val);
-  }
-  function validatePassword() {
-    if (!passwordInput) return;
-    const val = passwordInput.value || '';
-    isFormValid.password = val.length >= 8;
-  }
-  function validateUsername() {
-    if (!usernameInput) return;
-    const val = (usernameInput.value || '').trim();
-    isFormValid.username = val.length >= 3;
-  }
-  function validatePhone() {
-    if (!phoneInput) return;
-    const val = (phoneInput.value || '').trim();
-    isFormValid.phone = val.length > 0;
-  }
-  function checkPasswordMatch() {
-    // se tiver confirm password, implemente aqui
-  }
-
-  // Chamar validações iniciais (se necessário)
-  setTimeout(() => {
-    validateUsername();
-    validateEmail();
-    validatePhone();
-    validatePassword();
-    checkPasswordMatch();
-  }, 100);
-
-  // --- Função que envia para o servidor ---
-  async function saveUserToServer(payload) {
-    try {
-      // ATENÇÃO: em desenvolvimento, ajuste para 'http://localhost:3000/api/register' se seu backend estiver em outra porta
-      const resp = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await resp.json().catch(() => null);
-      console.log('📥 Resposta do servidor:', { status: resp.status, ok: resp.ok, body: data });
-
-      if (resp.ok) {
-        return { ok: true, data };
-      }
-
-      return { ok: false, status: resp.status, error: data || { message: 'Erro desconhecido' } };
-    } catch (e) {
-      console.error('Erro de rede ao chamar /api/register', e);
-      return { ok: false, error: { message: e.message || 'Network error' } };
-    }
-  }
-
-  // --- Handler do submit ---
-  async function handleSubmit(event) {
-    event.preventDefault();
-    if (!submitButton) return;
-
-    // Evita múltiplos envios
-    if (submitButton.disabled) return;
-
-    // Revalidar campos
-    validateUsername();
-    validateEmail();
-    validatePhone();
-    validatePassword();
-    checkPasswordMatch();
-
-    const allValid = Object.values(isFormValid).every(v => v === true);
-    if (!allValid) {
-      showResult('Please fill all fields correctly', false);
+    if (signUpError) {
+      console.error('SignUp error:', signUpError);
+      showResult(signUpError.message || 'Registration failed', false);
+      setLoading(false);
       return;
     }
 
-    setLoading(true);
-    showResult('Creating your account...', true);
+    // Se o projeto requer confirmação por email, o usuário receberá o link.
+    // signUpData.user indica o usuário criado.
+    console.log('signUpData', signUpData);
 
-    try {
-      // Obter token reCAPTCHA (opcional)
-      let recaptchaToken = null;
-      if (typeof grecaptcha !== 'undefined' && typeof RECAPTCHA_SITE_KEY !== 'undefined') {
-        try {
-          recaptchaToken = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'submit' });
-          console.log('✅ reCAPTCHA token obtido');
-        } catch (recaptchaError) {
-          console.warn('reCAPTCHA error:', recaptchaError);
-        }
-      }
-
-      const userData = {
-        email: (emailInput.value || '').trim(),
-        password: passwordInput.value || '',
-        username: (usernameInput.value || '').trim(),
-        phone: (phoneInput.value || '').trim(),
-        recaptchaToken,
+    // 2) Opcional: criar perfil na tabela "profiles" (recomendado) — usando anon key,
+    // mas lembre-se: a tabela profiles deve ter políticas RLS que permitam inserts por users.
+    // Se preferir criação via backend (service_role), mova isso para um endpoint seguro.
+    const user = signUpData.user;
+    if (user) {
+      const profile = {
+        id: user.id,           // assumir que profiles.id é uuid do auth
+        email: user.email,
+        username,
+        phone,
       };
 
-      console.log('📤 Enviando dados para /api/register (senha oculta):', {
-        ...userData,
-        password: '***'
-      });
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .upsert(profile, { returning: 'minimal' }); // upsert útil para evitar duplicados
 
-      const result = await saveUserToServer(userData);
-
-      if (result.ok && (result.data?.success || result.data?.profile || result.data?.userId)) {
-        const userId = result.data?.userId || result.data?.profile?.id || null;
-        console.log('✅ USUÁRIO CRIADO NO SERVIDOR! ID:', userId);
-        showResult('Account created successfully! Redirecting...', true);
-
-        // Salvar informação mínima no localStorage (opcional)
-        localStorage.setItem('last_registered_email', userData.email);
-
-        // Redirecionar após curto delay
-        setTimeout(() => {
-          window.location.href = 'index.html';
-        }, 2000);
+      if (profileError) {
+        console.warn('Profile upsert warning/error:', profileError);
+        // Não falhar completamente — pode ser ajustado conforme sua RLS/policies
       } else {
-        console.error('❌ Erro do servidor:', result.error || result.status);
-        const message =
-          (result.error && (result.error.error || result.error.message || JSON.stringify(result.error))) ||
-          'Registration failed';
-        showResult(message, false);
-        setLoading(false);
+        console.log('Profile upserted:', profileData);
       }
-    } catch (error) {
-      console.error('❌ Registration error:', error);
-      showResult('Connection error. Please try again.', false);
-      setLoading(false);
     }
-  }
 
-  // Attaching the submit handler
-  if (form) {
-    form.addEventListener('submit', handleSubmit);
-  } else {
-    console.warn('⚠️ Form element (#register-form) não encontrado. Ajuste o seletor no create.js');
+    showResult('Account created! Check your email to confirm (if required).', true);
+    setTimeout(() => window.location.href = 'index.html', 1800);
+  } catch (err) {
+    console.error('Registration unexpected error', err);
+    showResult('Connection error. Please try again.', false);
+  } finally {
+    setLoading(false);
   }
-});
+}
+
+if (form) {
+  form.addEventListener('submit', handleSubmit);
+} else {
+  console.warn('Form #registrationForm não encontrado — ajuste o seletor no create.js');
+}
