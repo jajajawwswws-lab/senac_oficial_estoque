@@ -7,7 +7,7 @@
     "preinstall": "npx npm-force-resolutions"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0",
+    "@supabase/supabase-js": "^2.98.0",
     "@vercel/node": "^4.0.0",
     "cookie": "^0.7.0",
     "path-to-regexp": "^6.2.2"
