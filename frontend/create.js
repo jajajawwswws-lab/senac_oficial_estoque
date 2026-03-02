@@ -129,3 +129,4 @@ if (form) {
 } else {
   console.warn('Form #registrationForm não encontrado — ajuste o seletor no create.js');
 }
+
